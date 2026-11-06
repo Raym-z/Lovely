@@ -7,6 +7,7 @@ import type { LovelyContent } from "@/content/lovely";
 import { usePersistentState } from "@/lib/use-persistent-state";
 import { cn } from "@/lib/cn";
 import { ConfettiEffect } from "./ConfettiEffect";
+import { CreamEnvelope } from "./CreamEnvelope";
 import { FlowerShape, HeartShape, SparkleShape, StarShape } from "./Doodles";
 import { buttonBaseClasses, GhostButton, PrimaryButton, SectionIntro, Sticker } from "./ui";
 
@@ -41,72 +42,7 @@ function SealButton({ recipient, opening, onOpen }: { recipient: string; opening
 			whileTap={opening ? undefined : { scale: 0.985 }}
 		>
 			<span aria-hidden='true' className='absolute -bottom-7 left-1/2 h-8 w-[70%] -translate-x-1/2 rounded-[100%] bg-[#c9a37c]/20 blur-xl' />
-			<span className='relative block aspect-[4/3] w-full' style={{ perspective: 1000 }}>
-				<span className='absolute inset-0 rounded-[1.7rem] border-2 border-white bg-[#f2dfc8] shadow-[0_34px_70px_-36px_rgba(120,86,66,0.6)]' />
-				<span className='dot-grid absolute inset-0 rounded-[1.7rem] opacity-25' />
-				<span className='absolute inset-x-7 top-6 h-[64%] rounded-lg bg-lavender-soft/70' />
-
-				<span className='absolute inset-0 overflow-hidden rounded-[1.7rem] bg-gradient-to-br from-[#fdf6ea] via-[#f9eddc] to-[#f0dabf] ring-1 ring-inset ring-[#e4c9ac]/60'>
-					<span
-						className='absolute inset-0 bg-[#f6e7d3]'
-						style={{
-							clipPath: "polygon(0 100%, 0 34%, 50% 74%, 100% 34%, 100% 100%)",
-						}}
-					/>
-					<span
-						className='absolute inset-0 bg-white/30'
-						style={{
-							clipPath: "polygon(0 100%, 0 64%, 50% 100%, 100% 64%, 100% 100%)",
-						}}
-					/>
-					<span className='absolute bottom-5 left-6 font-hand text-xl text-[#a97a58]'>For {recipient},</span>
-					<span className='absolute bottom-5 right-6 font-hand text-base text-[#b58a68]'>with all my love</span>
-				</span>
-
-				<motion.span
-					aria-hidden='true'
-					className='absolute inset-x-0 top-0 z-20 block h-[62%]'
-					style={{
-						transformOrigin: "top center",
-						transformStyle: "preserve-3d",
-					}}
-					animate={opening ? { rotateX: -168 } : { rotateX: 0 }}
-					transition={{ duration: 0.8, ease }}
-				>
-					<span
-						className='absolute inset-0'
-						style={{
-							clipPath: "polygon(0 0, 50% 100%, 100% 0)",
-							background: "linear-gradient(160deg,#fbf0e1,#e3c5a3)",
-						}}
-					/>
-					<span
-						className='absolute inset-0 opacity-55'
-						style={{
-							clipPath: "polygon(0 0, 50% 100%, 100% 0)",
-							background: "linear-gradient(180deg, rgba(255,255,255,0.65), transparent 58%)",
-						}}
-					/>
-					<svg aria-hidden='true' viewBox='0 0 100 62' preserveAspectRatio='none' className='absolute inset-0 h-full w-full'>
-						<path d='M0 0 L50 62 L100 0' fill='none' stroke='#d8b892' strokeWidth='1' opacity='0.65' vectorEffect='non-scaling-stroke' />
-					</svg>
-				</motion.span>
-
-				<span className='absolute left-1/2 top-[61%] z-30 -translate-x-1/2 -translate-y-1/2'>
-					<motion.span
-						className='wax-seal grid h-[4.4rem] w-[4.4rem] place-items-center rounded-full text-white ring-2 ring-white/50 sm:h-20 sm:w-20'
-						animate={opening ? { scale: [1, 1.12, 1.5], opacity: [1, 1, 0], y: -14 } : { scale: [1, 1.04, 1] }}
-						transition={opening ? { duration: 0.55, ease: "easeOut" } : { duration: 3, repeat: Infinity, ease: "easeInOut" }}
-					>
-						<HeartShape className='h-8 w-8' />
-					</motion.span>
-				</span>
-
-				<span className='absolute -right-2 top-10 z-30 rotate-[-7deg] rounded-full bg-pink-soft px-3 py-1 font-hand text-sm text-[#a3324a] shadow-sm sm:-right-4'>open me</span>
-
-				<StarShape className='absolute -left-4 bottom-1/4 z-30 h-5 w-5 text-[#d9b679]' />
-				<FlowerShape className='absolute -right-4 bottom-10 z-30 h-5 w-5 text-pink' />
-			</span>
+			<CreamEnvelope recipient={recipient} opening={opening} />
 		</motion.button>
 	);
 }

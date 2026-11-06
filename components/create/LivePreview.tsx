@@ -20,12 +20,15 @@ import {
   SparkleShape,
   StarShape,
 } from "@/components/lovely/Doodles";
+import { CreamEnvelope } from "@/components/lovely/CreamEnvelope";
 import { Envelope } from "@/components/lovely/Envelope";
 import { MemoryPhoto } from "@/components/lovely/MemoryPhoto";
 import {
   reasonCardStyles,
   reasonIconColors,
 } from "@/components/lovely/gifts/ReasonCards";
+import { ReasonBalloons } from "@/components/lovely/gifts/ReasonBalloons";
+import { ReasonEnvelopeIcon } from "@/components/lovely/gifts/ReasonEnvelopeIcon";
 import { Sticker } from "@/components/lovely/ui";
 import { cn } from "@/lib/cn";
 import { SecretGardenPreview } from "./SecretGardenPreview";
@@ -476,12 +479,12 @@ function ReasonsPreview({ reasons }: { reasons: string[] }) {
                   reasonCardStyles[tone],
                 )}
               >
-                <HeartShape
-                  className={cn(
-                    "absolute -right-1 -top-1 h-3.5 w-3.5 rotate-12 opacity-30",
-                    reasonIconColors[tone],
-                  )}
-                />
+                {!isOpen ? (
+                  <ReasonBalloons
+                    color={reasonIconColors[tone]}
+                    size="sm"
+                  />
+                ) : null}
 
                 <AnimatePresence mode="wait" initial={false}>
                   {isOpen ? (
@@ -504,31 +507,10 @@ function ReasonsPreview({ reasons }: { reasons: string[] }) {
                       transition={{ duration: 0.28 }}
                       className="flex flex-col items-center"
                     >
-                      <span className="relative grid h-7 w-8 place-items-center">
-                        <span
-                          className={cn(
-                            "absolute inset-x-0 bottom-0 h-5 rounded border-2 border-current bg-white/60",
-                            reasonIconColors[tone],
-                          )}
-                        />
-                        <span
-                          className={cn(
-                            "absolute inset-x-0 bottom-[10px] top-0.5 rounded border-2 border-current bg-white/85",
-                            reasonIconColors[tone],
-                          )}
-                          style={{
-                            clipPath:
-                              "polygon(0 0, 50% 62%, 100% 0, 100% 100%, 0 100%)",
-                          }}
-                        />
-                        <span className="absolute inset-0 grid place-items-center">
-                          <span className="grid h-3.5 w-3.5 place-items-center rounded-full bg-strawberry text-white shadow-sm">
-                            <HeartShape
-                              style={{ width: "0.4rem", height: "0.4rem" }}
-                            />
-                          </span>
-                        </span>
-                      </span>
+                      <ReasonEnvelopeIcon
+                        color={reasonIconColors[tone]}
+                        size="sm"
+                      />
                       <span className="mt-1 font-display text-[0.44rem] font-semibold leading-tight text-ink">
                         Reason no. {String(index + 1).padStart(2, "0")}
                       </span>
@@ -794,62 +776,11 @@ function ChapterLetterPreview({ content }: { content: LovelyContent }) {
         {finalLetter.subtitle || "The copy around the sealed letter."}
       </p>
 
-      <div className="relative mx-auto mt-3 aspect-[5/3.3] w-[86%]">
-        <span className="absolute inset-0 rounded-xl border-2 border-white bg-[#f2dfc8] shadow-[0_14px_26px_-16px_rgba(120,86,66,0.65)]" />
-        <span className="dot-grid absolute inset-0 rounded-xl opacity-25" />
-        <span className="absolute inset-x-4 top-3 h-[64%] rounded-md bg-lavender-soft/70" />
-        <span className="absolute inset-0 overflow-hidden rounded-xl bg-gradient-to-br from-[#fdf6ea] via-[#f9eddc] to-[#f0dabf] ring-1 ring-inset ring-[#e4c9ac]/60">
-          <span
-            className="absolute inset-0 bg-[#f6e7d3]"
-            style={{
-              clipPath:
-                "polygon(0 100%, 0 34%, 50% 74%, 100% 34%, 100% 100%)",
-            }}
-          />
-          <span
-            className="absolute inset-0 bg-white/30"
-            style={{
-              clipPath:
-                "polygon(0 100%, 0 64%, 50% 100%, 100% 64%, 100% 100%)",
-            }}
-          />
-          <span className="absolute bottom-2 left-3 font-hand text-[0.7rem] text-[#a97a58]">
-            For {content.recipient},
-          </span>
-          <span className="absolute bottom-2 right-3 font-hand text-[0.55rem] text-[#b58a68]">
-            with all my love
-          </span>
-        </span>
-        <span
-          className="absolute inset-x-0 top-0 h-[62%]"
-          style={{
-            clipPath: "polygon(0 0, 50% 100%, 100% 0)",
-            background: "linear-gradient(160deg,#fbf0e1,#e3c5a3)",
-          }}
+      <div className="mx-auto mt-3 w-[86%]">
+        <CreamEnvelope
+          recipient={content.recipient || "you"}
+          preview
         />
-        <svg
-          aria-hidden="true"
-          viewBox="0 0 100 62"
-          preserveAspectRatio="none"
-          className="absolute inset-0 h-full w-full"
-        >
-          <path
-            d="M0 0 L50 62 L100 0"
-            fill="none"
-            stroke="#d8b892"
-            strokeWidth="1"
-            opacity="0.65"
-            vectorEffect="non-scaling-stroke"
-          />
-        </svg>
-        <span className="wax-seal absolute left-1/2 top-[61%] grid h-9 w-9 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full text-white ring-1 ring-white/50">
-          <HeartShape className="h-4 w-4" />
-        </span>
-        <span className="absolute -right-1 top-2 rotate-[-7deg] rounded-full bg-pink-soft px-2 py-0.5 font-hand text-[0.55rem] text-[#a3324a] shadow-sm">
-          open me
-        </span>
-        <StarShape className="absolute -left-2 bottom-1/4 h-3 w-3 text-[#d9b679]" />
-        <FlowerShape className="absolute -right-2 bottom-5 h-3 w-3 text-pink" />
       </div>
 
       <p className="mt-2 font-hand text-sm text-ink-soft/70">

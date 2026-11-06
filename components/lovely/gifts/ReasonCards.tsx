@@ -6,6 +6,8 @@ import { cn } from "@/lib/cn";
 import { usePersistentState } from "@/lib/use-persistent-state";
 import { HeartShape } from "../Doodles";
 import { GiftPanel } from "../ui";
+import { ReasonBalloons } from "./ReasonBalloons";
+import { ReasonEnvelopeIcon } from "./ReasonEnvelopeIcon";
 
 export const reasonCardStyles = [
   "border-pink/70 bg-blush/55 hover:border-pink",
@@ -77,15 +79,9 @@ export function ReasonCards({
                 reasonCardStyles[tone],
               )}
             >
-              <span
-                aria-hidden="true"
-                className={cn(
-                  "absolute -right-1.5 -top-1.5 text-current opacity-30",
-                  reasonIconColors[tone],
-                )}
-              >
-                <HeartShape className="h-7 w-7 rotate-12" />
-              </span>
+              {!isOpen ? (
+                <ReasonBalloons color={reasonIconColors[tone]} />
+              ) : null}
 
               <AnimatePresence mode="wait" initial={false}>
                 {isOpen ? (
@@ -114,30 +110,7 @@ export function ReasonCards({
                     transition={{ duration: 0.28 }}
                     className="flex flex-col items-center"
                   >
-                    <span className="relative grid h-12 w-14 place-items-center">
-                      <span
-                        className={cn(
-                          "absolute inset-x-0 bottom-0 h-9 rounded-md border-2 border-current bg-white/60",
-                          reasonIconColors[tone],
-                        )}
-                      />
-                      <span
-                        className={cn(
-                          "absolute inset-x-0 bottom-[18px] top-1.5 rounded-md border-2 border-current bg-white/85",
-                          reasonIconColors[tone],
-                        )}
-                        style={{
-                          clipPath: "polygon(0 0, 50% 62%, 100% 0, 100% 100%, 0 100%)",
-                        }}
-                      />
-                      <span className="absolute inset-0 grid place-items-center">
-                        <span className="grid h-6 w-6 place-items-center rounded-full bg-strawberry text-white shadow-sm">
-                          <HeartShape
-                            style={{ width: "0.625rem", height: "0.625rem" }}
-                          />
-                        </span>
-                      </span>
-                    </span>
+                    <ReasonEnvelopeIcon color={reasonIconColors[tone]} />
                     <span className="mt-2.5 font-display text-[0.82rem] font-semibold leading-tight text-ink">
                       Reason no. {String(index + 1).padStart(2, "0")}
                     </span>

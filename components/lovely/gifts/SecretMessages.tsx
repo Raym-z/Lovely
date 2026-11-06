@@ -33,10 +33,17 @@ export function SecretMessages({
   const foundCount = messages.filter((message) =>
     openedSet.has(message.id),
   ).length;
+  const discoveredIds = opened.filter((id) =>
+    messages.some((message) => message.id === id),
+  );
   const activeIndex = messages.findIndex(
     (message) => message.id === activeId,
   );
   const activeMessage = activeIndex >= 0 ? messages[activeIndex] : null;
+  const activeNumber =
+    activeId && discoveredIds.includes(activeId)
+      ? discoveredIds.indexOf(activeId) + 1
+      : activeIndex + 1;
 
   function reveal(id: string) {
     setActiveId(id);
@@ -157,7 +164,7 @@ export function SecretMessages({
                 <X className="h-3.5 w-3.5" />
               </button>
               <p className="text-[0.55rem] font-bold uppercase tracking-[0.18em] text-strawberry">
-                secret no. {String(activeIndex + 1).padStart(2, "0")}
+                secret no. {String(activeNumber).padStart(2, "0")}
               </p>
               <p className="mx-auto mt-2 max-w-lg text-pretty font-hand text-[1.4rem] leading-snug text-[#8f4557] sm:text-[1.55rem]">
                 {activeMessage.text}

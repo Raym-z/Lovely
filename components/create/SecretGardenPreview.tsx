@@ -58,15 +58,18 @@ export function SecretGardenPreview({
 
   const openedSet = new Set(openedIds);
   const activeItem = messages.find((message) => message.id === activeId) ?? null;
-  const activeIndex = activeItem
-    ? messages.findIndex((message) => message.id === activeItem.id)
-    : -1;
   const popupItem = popup
     ? (messages.find((message) => message.id === popup.id) ?? null)
     : null;
-  const popupIndex = popupItem
-    ? messages.findIndex((message) => message.id === popupItem.id)
-    : -1;
+  const discoveredIds = openedIds.filter((id) =>
+    messages.some((message) => message.id === id),
+  );
+  const activeNumber = activeItem
+    ? discoveredIds.indexOf(activeItem.id) + 1
+    : 0;
+  const popupNumber = popupItem
+    ? discoveredIds.indexOf(popupItem.id) + 1
+    : 0;
   const openedCount = messages.reduce(
     (count, message) => count + (openedSet.has(message.id) ? 1 : 0),
     0,
@@ -364,7 +367,7 @@ export function SecretGardenPreview({
                 <X className="h-3 w-3" />
               </button>
               <p className="text-[0.44rem] font-bold uppercase tracking-[0.16em] text-strawberry">
-                secret no. {String(activeIndex + 1).padStart(2, "0")}
+                secret no. {String(activeNumber).padStart(2, "0")}
               </p>
               <p className="mt-0.5 line-clamp-3 pr-4 font-hand text-[0.92rem] leading-snug text-[#8f4557]">
                 {activeItem.text}
@@ -438,7 +441,7 @@ export function SecretGardenPreview({
               </p>
               <p className="mt-1.5 inline-flex items-center gap-1 font-body text-[0.42rem] font-bold uppercase tracking-[0.14em] text-ink-soft/55">
                 <HeartShape className="h-2 w-2 text-strawberry" />
-                secret no. {String(popupIndex + 1).padStart(2, "0")}
+                secret no. {String(popupNumber).padStart(2, "0")}
               </p>
             </motion.div>
           </motion.div>

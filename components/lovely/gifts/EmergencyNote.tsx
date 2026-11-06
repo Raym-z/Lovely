@@ -12,13 +12,13 @@ export function EmergencyNote({
   return (
     <div
       className={cn(
-        "relative flex flex-col overflow-hidden rounded-[1.9rem] border-2 border-butter bg-butter-soft/65 p-5 shadow-card sm:p-6",
+        "relative flex flex-col rounded-[1.9rem] border-2 border-butter bg-butter-soft/65 p-5 shadow-card sm:p-6",
         className,
       )}
     >
       <span
         aria-hidden="true"
-        className="tape absolute -top-3 left-1/2 h-6 w-24 -translate-x-1/2 rotate-[-2deg] rounded-[3px]"
+        className="tape absolute -top-3 left-1/2 z-20 h-6 w-24 -translate-x-1/2 rotate-[-2deg] rounded-[3px]"
       />
       <StarShape className="absolute -right-2 top-8 h-8 w-8 rotate-12 text-[#e7cf8c]/50" />
       <div className="flex items-center gap-3">
