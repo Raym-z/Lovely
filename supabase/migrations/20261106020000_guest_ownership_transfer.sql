@@ -104,15 +104,15 @@ begin
   get diagnostics v_images = row_count;
 
   if v_pages > 0 then
-    update public.lovely_images image
+    update public.lovely_images i
     set owner_id = p_destination_user
-    where image.owner_id is null
+    where i.owner_id is null
       and exists (
         select 1
-        from public.lovely_image_references reference
-        join public.lovely_pages page on page.id = reference.page_id
-        where reference.image_id = image.id
-          and page.owner_id = p_destination_user
+        from public.lovely_image_references r
+        join public.lovely_pages p on p.id = r.page_id
+        where r.image_id = i.id
+          and p.owner_id = p_destination_user
       );
 
     get diagnostics v_claimed = row_count;

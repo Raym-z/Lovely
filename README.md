@@ -74,6 +74,10 @@ For existing deployments, run `supabase/migrations/20261106000000_account_owners
 
 If email confirmation is enabled, the account is upgraded after the user confirms their email and returns to `/signup?complete=1` to set the password. The guest session and page ownership are preserved throughout.
 
+If a guest instead logs into a different existing account, `/login` captures the guest access token in memory before switching sessions. After login, the server verifies both Supabase identities and calls the transactional `transfer_guest_ownership` database function to move the guest's pages and images to the destination account. Page IDs, edit keys, image references, and public Storage paths are preserved. The transfer is idempotent and records completed source guest UIDs so a guest cannot be moved to two accounts. If the transfer fails, the account session remains active and the user can retry while the guest proof is still in memory, or use the original edit key.
+
+Run `supabase/migrations/20261106020000_guest_ownership_transfer.sql` after the account and image migrations to enable this transfer flow.
+
 ## Photo uploads
 
 Each story can use an illustrated template or an uploaded photo. Photos are cropped in the browser to the polaroid's exact `4:3` image viewport, exported as WebP (JPEG fallback), compressed toward the 1 MB target, and only then uploaded. Original files are never stored. Uploaded assets can be reused across stories and owned pages without duplicate Storage objects.
