@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { compressConfig, decompressConfig } from "@/lib/compression";
 import {
+  getAuthenticatedUserIdFromRequest,
   getPage,
   getStorageConfigIssue,
   getStorageMode,
@@ -22,10 +23,11 @@ function noStoreHeaders() {
   };
 }
 
-export async function GET(_request: Request, context: RouteContext) {
+export async function GET(request: Request, context: RouteContext) {
   const { uid } = await context.params;
 
   try {
+    const ownerId = await getAuthenticatedUserIdFromRequest(request);
     const page = await getPage(uid);
     if (!page) {
       return NextResponse.json(
@@ -44,7 +46,10 @@ export async function GET(_request: Request, context: RouteContext) {
     }
 
     return NextResponse.json(
-      { content: parsed.data },
+      {
+        content: parsed.data,
+        owned: Boolean(ownerId && page.ownerId === ownerId),
+      },
       { headers: noStoreHeaders() },
     );
   } catch (error) {
@@ -91,7 +96,9 @@ export async function PUT(request: Request, context: RouteContext) {
 
   const payload = body as { content?: unknown; editKey?: unknown } | null;
   const editKey = typeof payload?.editKey === "string" ? payload.editKey : "";
-  if (!editKey) {
+  const ownerId = await getAuthenticatedUserIdFromRequest(request);
+
+  if (!editKey && !ownerId) {
     return NextResponse.json(
       { error: "The edit key is missing." },
       { status: 401 },
@@ -118,7 +125,7 @@ export async function PUT(request: Request, context: RouteContext) {
   }
 
   try {
-    const result = await updatePage(uid, compressed, editKey);
+    const result = await updatePage(uid, compressed, editKey, ownerId);
 
     if (!result.ok && result.reason === "not_found") {
       return NextResponse.json(

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, MotionConfig, motion } from "framer-motion";
-import { Heart, Pencil, Sparkles } from "lucide-react";
+import { Heart, LogIn, Pencil, Sparkles } from "lucide-react";
 import type { LovelyContent } from "@/content/lovely";
 import { usePersistentState } from "@/lib/use-persistent-state";
 import { useHydrated } from "@/lib/use-hydrated";
@@ -147,13 +147,23 @@ export default function LovelyExperience({
                   onSelect={goTo}
                 />
               ) : personalizeHref ? (
-                <Link
-                  href={personalizeHref}
-                  className="group inline-flex items-center gap-1.5 rounded-full border-2 border-pink-soft bg-white/80 px-3.5 py-1.5 font-body text-[0.6rem] font-bold uppercase tracking-[0.16em] text-strawberry-deep shadow-[0_2px_0_rgba(73,52,59,0.06)] transition-colors hover:border-pink hover:bg-blush"
-                >
-                  <Pencil className="h-3.5 w-3.5 transition-transform group-hover:-rotate-12" />
-                  Personalize
-                </Link>
+                <>
+                  <Link
+                    href={personalizeHref}
+                    className="group inline-flex items-center gap-1.5 rounded-full border-2 border-pink-soft bg-white/80 px-3.5 py-1.5 font-body text-[0.6rem] font-bold uppercase tracking-[0.16em] text-strawberry-deep shadow-[0_2px_0_rgba(73,52,59,0.06)] transition-colors hover:border-pink hover:bg-blush"
+                  >
+                    <Pencil className="h-3.5 w-3.5 transition-transform group-hover:-rotate-12" />
+                    Personalize
+                  </Link>
+                  <Link
+                    href="/login"
+                    aria-label="Log in"
+                    className="group inline-flex items-center gap-1.5 rounded-full border-2 border-ink/10 bg-white/70 px-3.5 py-1.5 font-body text-[0.6rem] font-bold uppercase tracking-[0.16em] text-ink-soft shadow-[0_2px_0_rgba(73,52,59,0.06)] transition-colors hover:border-pink hover:bg-white hover:text-ink"
+                  >
+                    <LogIn className="h-3.5 w-3.5" />
+                    <span className="max-[380px]:hidden">Login</span>
+                  </Link>
+                </>
               ) : (
                 <Sticker tone="pink" className="max-[360px]:hidden">
                   <Heart className="h-3 w-3" />

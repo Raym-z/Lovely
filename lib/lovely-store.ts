@@ -1,7 +1,7 @@
 import "server-only";
 
 import crypto from "node:crypto";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
@@ -10,6 +10,14 @@ export type StorageMode = "supabase" | "file";
 export interface StoredPage {
   config: string;
   editKeyHash: string;
+  ownerId: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface OwnedPageRecord {
+  uid: string;
+  config: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -134,7 +142,14 @@ function filePath(uid: string) {
 async function readFilePage(uid: string): Promise<StoredPage | null> {
   try {
     const raw = await readFile(filePath(uid), "utf8");
-    return JSON.parse(raw) as StoredPage;
+    const parsed = JSON.parse(raw) as Partial<StoredPage>;
+    return {
+      config: parsed.config as string,
+      editKeyHash: parsed.editKeyHash as string,
+      ownerId: parsed.ownerId ?? null,
+      createdAt: parsed.createdAt as string,
+      updatedAt: parsed.updatedAt as string,
+    };
   } catch (error) {
     if (
       error instanceof Error &&
@@ -164,24 +179,38 @@ export async function getPage(uid: string): Promise<StoredPage | null> {
     return readFilePage(uid);
   }
 
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from(TABLE)
-    .select("config, edit_key_hash, created_at, updated_at")
+    .select("config, edit_key_hash, owner_id, created_at, updated_at")
     .eq("id", uid)
     .maybeSingle();
+
+  if (error?.code === "42703") {
+    ({ data, error } = await supabase
+      .from(TABLE)
+      .select("config, edit_key_hash, created_at, updated_at")
+      .eq("id", uid)
+      .maybeSingle());
+  }
 
   if (error) throw new Error(error.message);
   if (!data) return null;
 
+  const row = data as Record<string, unknown>;
+
   return {
-    config: data.config as string,
-    editKeyHash: data.edit_key_hash as string,
-    createdAt: data.created_at as string,
-    updatedAt: data.updated_at as string,
+    config: row.config as string,
+    editKeyHash: row.edit_key_hash as string,
+    ownerId: (row.owner_id as string | null | undefined) ?? null,
+    createdAt: row.created_at as string,
+    updatedAt: row.updated_at as string,
   };
 }
 
-export async function createPage(config: string): Promise<CreatePageResult> {
+export async function createPage(
+  config: string,
+  ownerId: string | null = null,
+): Promise<CreatePageResult> {
   const supabase = getSupabase();
   const storage: StorageMode = supabase ? "supabase" : "file";
 
@@ -192,13 +221,21 @@ export async function createPage(config: string): Promise<CreatePageResult> {
     const now = new Date().toISOString();
 
     if (supabase) {
-      const { error } = await supabase.from(TABLE).insert({
+      const page = {
         id: uid,
         config,
         edit_key_hash: editKeyHash,
         created_at: now,
         updated_at: now,
+      };
+      let { error } = await supabase.from(TABLE).insert({
+        ...page,
+        owner_id: ownerId,
       });
+
+      if (error?.code === "42703") {
+        ({ error } = await supabase.from(TABLE).insert(page));
+      }
 
       if (!error) return { uid, editKey, storage };
       if (error.code === "23505") continue;
@@ -209,6 +246,7 @@ export async function createPage(config: string): Promise<CreatePageResult> {
       await writeFilePage(uid, {
         config,
         editKeyHash,
+        ownerId,
         createdAt: now,
         updatedAt: now,
       });
@@ -232,23 +270,43 @@ export async function updatePage(
   uid: string,
   config: string,
   editKey: string,
+  ownerId: string | null = null,
 ): Promise<UpdatePageResult> {
   if (!isValidUid(uid)) return { ok: false, reason: "not_found" };
 
   const stored = await getPage(uid);
   if (!stored) return { ok: false, reason: "not_found" };
-  if (!editKeyMatches(editKey, stored.editKeyHash)) {
+
+  const canEditByKey = Boolean(
+    editKey && editKeyMatches(editKey, stored.editKeyHash),
+  );
+  const canEditAsOwner = Boolean(ownerId && stored.ownerId === ownerId);
+
+  if (!canEditByKey && !canEditAsOwner) {
     return { ok: false, reason: "forbidden" };
   }
 
+  const claimOwner = Boolean(ownerId && !stored.ownerId && canEditByKey);
   const supabase = getSupabase();
   const now = new Date().toISOString();
 
   if (supabase) {
-    const { error } = await supabase
+    const update = {
+      config,
+      updated_at: now,
+      ...(claimOwner ? { owner_id: ownerId } : {}),
+    };
+    let { error } = await supabase
       .from(TABLE)
-      .update({ config, updated_at: now })
+      .update(update)
       .eq("id", uid);
+
+    if (error?.code === "42703" && claimOwner) {
+      ({ error } = await supabase
+        .from(TABLE)
+        .update({ config, updated_at: now })
+        .eq("id", uid));
+    }
 
     if (error) throw new Error(error.message);
     return { ok: true, storage: "supabase" };
@@ -258,7 +316,97 @@ export async function updatePage(
     ...stored,
     config,
     updatedAt: now,
+    ownerId: claimOwner ? ownerId : stored.ownerId,
   }), "utf8");
 
   return { ok: true, storage: "file" };
+}
+
+export async function getAuthenticatedUserIdFromRequest(request: Request) {
+  const authorization = request.headers.get("authorization");
+  if (!authorization?.startsWith("Bearer ")) return null;
+
+  const token = authorization.slice("Bearer ".length).trim();
+  if (!token) return null;
+
+  const supabase = getSupabase();
+  if (!supabase) return null;
+
+  try {
+    const { data, error } = await supabase.auth.getUser(token);
+    if (error) return null;
+    return data.user?.id ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export async function getPagesByOwner(
+  ownerId: string,
+): Promise<OwnedPageRecord[]> {
+  const supabase = getSupabase();
+
+  if (supabase) {
+    const { data, error } = await supabase
+      .from(TABLE)
+      .select("id, config, created_at, updated_at")
+      .eq("owner_id", ownerId)
+      .order("updated_at", { ascending: false });
+
+    if (error?.code === "42703") {
+      throw new Error(
+        "Account ownership is not enabled in Supabase yet. Run the latest supabase/schema.sql or the account ownership migration.",
+      );
+    }
+
+    if (error) throw new Error(error.message);
+
+    return (data ?? []).map((page) => ({
+      uid: page.id as string,
+      config: page.config as string,
+      createdAt: page.created_at as string,
+      updatedAt: page.updated_at as string,
+    }));
+  }
+
+  const directory = path.join(process.cwd(), ".data", "lovely");
+  let files: string[];
+
+  try {
+    files = await readdir(directory);
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      "code" in error &&
+      (error as NodeJS.ErrnoException).code === "ENOENT"
+    ) {
+      return [];
+    }
+    throw error;
+  }
+
+  const pages = await Promise.all(
+    files
+      .filter((file) => file.endsWith(".json"))
+      .map(async (file): Promise<OwnedPageRecord | null> => {
+        try {
+          const raw = await readFile(path.join(directory, file), "utf8");
+          const parsed = JSON.parse(raw) as Partial<StoredPage>;
+          if (parsed.ownerId !== ownerId) return null;
+
+          return {
+            uid: file.replace(/\.json$/, ""),
+            config: parsed.config as string,
+            createdAt: parsed.createdAt as string,
+            updatedAt: parsed.updatedAt as string,
+          };
+        } catch {
+          return null;
+        }
+      }),
+  );
+
+  return pages
+    .filter((page): page is OwnedPageRecord => page !== null)
+    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
 }

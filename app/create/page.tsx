@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import { GuestSessionProvider } from "@/components/auth/GuestSessionProvider";
 import CreateExperience from "@/components/create/CreateExperience";
+import { getSupabasePublicConfig } from "@/lib/supabase-public-config";
 
 export const metadata: Metadata = {
   title: "Create your Lovely — A little place for love",
@@ -8,5 +10,15 @@ export const metadata: Metadata = {
 };
 
 export default function CreatePage() {
-  return <CreateExperience />;
+  const supabase = getSupabasePublicConfig();
+
+  return (
+    <GuestSessionProvider
+      supabaseUrl={supabase.url}
+      supabaseKey={supabase.key}
+      turnstileSiteKey={supabase.turnstileSiteKey}
+    >
+      <CreateExperience />
+    </GuestSessionProvider>
+  );
 }

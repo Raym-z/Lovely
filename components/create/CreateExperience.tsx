@@ -31,6 +31,7 @@ import {
   moveSecretMessage,
   normalizeSecretMessages,
 } from "@/lib/secret-garden";
+import { useGuestSession } from "@/components/auth/GuestSessionProvider";
 import { LoadingScreen } from "@/components/lovely/LoadingScreen";
 import { HeartShape, Squiggle } from "@/components/lovely/Doodles";
 import { GhostButton, PrimaryButton, Sticker } from "@/components/lovely/ui";
@@ -246,7 +247,20 @@ function EditKeyBanner({
 
 export default function CreateExperience() {
   const hydrated = useHydrated();
+  const {
+    session,
+    user,
+    isAnonymous,
+    status: guestStatus,
+  } = useGuestSession();
+  const authToken = session?.access_token ?? null;
+  const authTokenRef = useRef<string | null>(authToken);
 
+  useEffect(() => {
+    authTokenRef.current = authToken;
+  }, [authToken]);
+
+  const [ownsPage, setOwnsPage] = useState(false);
   const [editUid, setEditUid] = useState<string | null>(() => {
     if (typeof window === "undefined") return null;
     const value = new URLSearchParams(window.location.search).get("edit");
@@ -377,22 +391,35 @@ export default function CreateExperience() {
       : null;
 
   useEffect(() => {
-    if (!hydrated || !editUid || !shouldLoadEditRef.current) return;
+    if (
+      !hydrated ||
+      !editUid ||
+      guestStatus === "loading" ||
+      !shouldLoadEditRef.current
+    ) {
+      return;
+    }
 
     const uid = editUid;
     let cancelled = false;
+    const token = authTokenRef.current;
 
     async function loadPage() {
       try {
         const response = await fetch(`/api/lovely/${encodeURIComponent(uid)}`, {
           cache: "no-store",
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
         });
         if (!response.ok) throw new Error("Could not load this Lovely.");
-        const data = (await response.json()) as { content?: unknown };
+        const data = (await response.json()) as {
+          content?: unknown;
+          owned?: boolean;
+        };
         const parsed = validateLovelyContent(data.content);
         if (!parsed.success) throw new Error("This Lovely is not readable.");
         if (!cancelled) {
           setContent(parsed.data);
+          setOwnsPage(Boolean(data.owned));
           setLoadState("ready");
         }
       } catch {
@@ -404,7 +431,7 @@ export default function CreateExperience() {
     return () => {
       cancelled = true;
     };
-  }, [editUid, hydrated]);
+  }, [editUid, guestStatus, hydrated]);
 
   useEffect(() => {
     if (!hydrated || editUid || loadState !== "ready") return;
@@ -534,8 +561,10 @@ export default function CreateExperience() {
       return;
     }
 
-    if (editUid && !editKey) {
-      setSaveError("Add the edit key above so we can save your changes.");
+    if (editUid && !editKey && !ownsPage) {
+      setSaveError(
+        "Add the edit key above or sign in as this page's owner to save your changes.",
+      );
       setStep("review");
       window.scrollTo({ top: 0, behavior: "smooth" });
       return;
@@ -547,7 +576,12 @@ export default function CreateExperience() {
         editUid ? `/api/lovely/${encodeURIComponent(editUid)}` : "/api/lovely",
         {
           method: editUid ? "PUT" : "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            ...(authTokenRef.current
+              ? { Authorization: `Bearer ${authTokenRef.current}` }
+              : {}),
+          },
           body: JSON.stringify(
             editUid
               ? { content: validation.data, editKey }
@@ -632,6 +666,7 @@ export default function CreateExperience() {
     setSaved(null);
     setEditUid(null);
     setEditKey("");
+    setOwnsPage(false);
     setLoadState("ready");
     setContent(createStarterContent());
     setStep("basics");
@@ -782,31 +817,108 @@ export default function CreateExperience() {
               </div>
             ) : null}
 
-            <div className="mt-5 rounded-xl border-2 border-dashed border-lavender bg-lavender-soft/40 p-4">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2 font-display text-sm font-semibold text-[#6b5195]">
-                  <KeyRound className="h-4 w-4" />
-                  Your edit key
+            {saved.editKey ? (
+              <div className="mt-5 rounded-xl border-2 border-dashed border-lavender bg-lavender-soft/40 p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2 font-display text-sm font-semibold text-[#6b5195]">
+                    <KeyRound className="h-4 w-4" />
+                    Your edit key
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => copyValue(saved.editKey, "key")}
+                    className="inline-flex items-center gap-1.5 rounded-full bg-white/80 px-3 py-1.5 font-body text-[0.58rem] font-bold uppercase tracking-[0.1em] text-[#6b5195] transition-colors hover:bg-white"
+                  >
+                    {copied === "key" ? (
+                      <Check className="h-3 w-3" />
+                    ) : (
+                      <Copy className="h-3 w-3" />
+                    )}
+                    {copied === "key" ? "Copied" : "Copy key"}
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => copyValue(saved.editKey, "key")}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-white/80 px-3 py-1.5 font-body text-[0.58rem] font-bold uppercase tracking-[0.1em] text-[#6b5195] transition-colors hover:bg-white"
-                >
-                  {copied === "key" ? (
-                    <Check className="h-3 w-3" />
-                  ) : (
-                    <Copy className="h-3 w-3" />
-                  )}
-                  {copied === "key" ? "Copied" : "Copy key"}
-                </button>
+                <code className="mt-2 block break-all rounded-lg bg-white/70 px-3 py-2 font-mono text-[0.7rem] text-ink-soft">
+                  {saved.editKey}
+                </code>
+                <p className="mt-2 font-hand text-base leading-tight text-[#6b5195]/80">
+                  Keep this private. You&apos;ll need it to edit from another
+                  browser.
+                </p>
               </div>
-              <code className="mt-2 block break-all rounded-lg bg-white/70 px-3 py-2 font-mono text-[0.7rem] text-ink-soft">
-                {saved.editKey}
-              </code>
-              <p className="mt-2 font-hand text-base leading-tight text-[#6b5195]/80">
-                Keep this private. You&apos;ll need it to edit from another
-                browser.
+            ) : (
+              <div className="mt-5 rounded-xl border-2 border-dashed border-mint bg-mint-soft/40 p-4">
+                <div className="flex items-center gap-2 font-display text-sm font-semibold text-[#3d8a6d]">
+                  <Heart className="h-4 w-4" />
+                  Saved to your Lovely account
+                </div>
+                <p className="mt-1.5 font-hand text-base leading-tight text-[#3d8a6d]/80">
+                  You can edit this page from your account without needing the
+                  original edit key.
+                </p>
+              </div>
+            )}
+
+            <div className="mt-5 rounded-xl border-2 border-pink/25 bg-blush/35 p-4">
+              <p className="font-display text-sm font-semibold text-ink">
+                Want to keep all your Lovely pages in one place?
+              </p>
+              <p className="mt-1 font-body text-[0.72rem] leading-relaxed text-ink-soft">
+                Create a free Lovely account to save your pages, photos, and
+                customizations. You can always keep using your edit key instead.
+              </p>
+              <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                <div className="rounded-xl bg-white/75 p-3">
+                  <div className="flex items-center gap-1.5 font-body text-[0.56rem] font-bold uppercase tracking-[0.12em] text-[#6b5195]">
+                    <KeyRound className="h-3.5 w-3.5" />
+                    Keep my edit key
+                  </div>
+                  <p className="mt-1 font-hand text-base leading-tight text-[#6b5195]/85">
+                    Save the key from when you created this page. You will need
+                    it to edit from another browser or device.
+                  </p>
+                </div>
+                <div className="rounded-xl bg-white/75 p-3">
+                  <div className="flex items-center gap-1.5 font-body text-[0.56rem] font-bold uppercase tracking-[0.12em] text-strawberry">
+                    <Heart className="h-3.5 w-3.5" />
+                    Create a Lovely account
+                  </div>
+                  <p className="mt-1 font-hand text-base leading-tight text-[#8f4557]/85">
+                    Keep your pages, future photos, and projects together in one
+                    place.
+                  </p>
+                  {user && !isAnonymous ? (
+                    <Link
+                      href="/account"
+                      className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-strawberry px-3.5 py-2 font-display text-[0.68rem] font-semibold text-white shadow-[0_3px_0_#d94360] transition-colors hover:bg-[#f56a80]"
+                    >
+                      Open your account
+                      <ArrowRight className="h-3 w-3" />
+                    </Link>
+                  ) : user && isAnonymous ? (
+                    <Link
+                      href="/signup"
+                      className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-strawberry px-3.5 py-2 font-display text-[0.68rem] font-semibold text-white shadow-[0_3px_0_#d94360] transition-colors hover:bg-[#f56a80]"
+                    >
+                      Create free account
+                      <ArrowRight className="h-3 w-3" />
+                    </Link>
+                  ) : (
+                    <p className="mt-2 font-body text-[0.62rem] leading-relaxed text-ink-soft/70">
+                      {guestStatus === "loading"
+                        ? "Checking your account..."
+                        : "Account sign-up is unavailable right now. Your edit key still works."}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <p className="mt-2 text-center font-body text-[0.62rem] text-ink-soft/70">
+                Already have an account?{" "}
+                <Link
+                  href="/login"
+                  className="font-semibold text-strawberry transition-colors hover:text-strawberry-deep"
+                >
+                  Log in
+                </Link>
               </p>
             </div>
 
@@ -987,7 +1099,7 @@ export default function CreateExperience() {
 
         <StepNav current={step} onSelect={goToStep} />
 
-        {editUid && !editKey ? (
+        {editUid && !editKey && !ownsPage ? (
           <EditKeyBanner
             value={keyDraft}
             onChange={setKeyDraft}

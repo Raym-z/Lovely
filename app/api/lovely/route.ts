@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { compressConfig } from "@/lib/compression";
 import {
   createPage,
+  getAuthenticatedUserIdFromRequest,
   getStorageConfigIssue,
   getStorageMode,
 } from "@/lib/lovely-store";
@@ -64,7 +65,8 @@ export async function POST(request: Request) {
   }
 
   try {
-    const created = await createPage(compressed);
+    const ownerId = await getAuthenticatedUserIdFromRequest(request);
+    const created = await createPage(compressed, ownerId);
     return NextResponse.json(
       {
         uid: created.uid,
