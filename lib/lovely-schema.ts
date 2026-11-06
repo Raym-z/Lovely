@@ -135,7 +135,7 @@ export const lovelyContentSchema: z.ZodType<LovelyContent> = z.object({
   recipient: requiredText(60),
   tagline: requiredText(120),
   invitation: z.object({
-    eyebrow: requiredText(120),
+    eyebrow: z.string().trim().max(120).default(""),
     title: requiredText(300),
     subtitle: requiredText(500),
     hint: requiredText(300),

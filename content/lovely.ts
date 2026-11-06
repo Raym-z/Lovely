@@ -127,13 +127,13 @@ export const lovelyContent: LovelyContent = {
   recipient: "Mia",
   tagline: "A little website, a lot of love.",
   invitation: {
-    eyebrow: "A little something for you",
-    title: "Someone has something for you...",
+    eyebrow: "",
+    title: "Something for you...",
     subtitle:
-      "A tiny corner of the internet, folded up like a love note and tied with a pink ribbon.",
+      "A little love note in the tiny corner of the internet.",
     hint: "psst... it's from someone who really, really likes you.",
     cta: "Open your surprise",
-    note: "Sealed with a strawberry heart. Best opened with a smile.",
+    note: "Sealed with love, Alex.",
   },
   memories: [
     {

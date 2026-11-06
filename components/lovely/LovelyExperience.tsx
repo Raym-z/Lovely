@@ -232,17 +232,22 @@ export default function LovelyExperience({
             <Squiggle className="h-2.5 w-16 rotate-180" />
           </div>
           {createHref ? (
-            <Link
-              href={createHref}
-              className="mt-1 inline-flex items-center gap-1.5 rounded-full border-2 border-pink-soft bg-white/70 px-4 py-2 font-body text-[0.6rem] font-bold uppercase tracking-[0.16em] text-strawberry transition-colors hover:border-pink hover:bg-blush"
-            >
-              <Sparkles className="h-3.5 w-3.5" />
-              Make your own Lovely
-            </Link>
+            <div className="mt-1 flex flex-col items-center">
+              <p className="font-display text-lg font-semibold text-ink">
+                Have someone in mind?
+              </p>
+              <p className="mt-0.5 font-body text-sm text-ink-soft">
+                Make them something lovely.
+              </p>
+              <Link
+                href={createHref}
+                className="mt-3 inline-flex items-center gap-1.5 rounded-full border-2 border-pink-soft bg-white/70 px-4 py-2 font-body text-[0.6rem] font-bold uppercase tracking-[0.16em] text-strawberry transition-colors hover:border-pink hover:bg-blush"
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                Make your own Lovely
+              </Link>
+            </div>
           ) : null}
-          <p className="font-hand text-lg text-ink-soft/65">
-            made with love, a little glitter, and one very full heart
-          </p>
         </footer>
 
         <ConfettiEffect burst={burst} />

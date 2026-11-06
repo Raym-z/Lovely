@@ -62,10 +62,7 @@ export function Envelope({
           <span className="block font-hand text-2xl leading-none text-strawberry">
             For {recipient},
           </span>
-          <span className="mt-2 block font-hand text-lg leading-tight text-ink-soft">
-            with all my love...
-          </span>
-          <span className="mt-3 flex items-center gap-1.5 text-pink">
+          <span className="mt-4 flex items-center gap-1.5 text-pink">
             <HeartShape className="h-4 w-4" />
             <HeartShape className="h-3 w-3" />
             <HeartShape className="h-4 w-4" />
@@ -86,9 +83,6 @@ export function Envelope({
               clipPath: "polygon(0 100%, 0 62%, 50% 100%, 100% 62%, 100% 100%)",
             }}
           />
-          <span className="absolute left-5 top-5 font-hand text-sm text-white/70">
-            a little love note
-          </span>
           <span className="absolute inset-x-0 bottom-4 flex items-center justify-center gap-2 font-hand text-2xl text-white drop-shadow-[0_1px_2px_rgba(180,50,76,0.25)]">
             For {recipient}
             <HeartShape className="h-4 w-4 text-white" />

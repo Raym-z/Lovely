@@ -95,9 +95,6 @@ export function BasicsStep({
 			</EditorCard>
 
 			<EditorCard title='The invitation' description='The first thing they see. Keep it warm, a little mysterious, and very you.' accent='pink'>
-				<Field label='Eyebrow' required>
-					<TextInput value={content.invitation.eyebrow} onChange={(event) => updateInvitation({ eyebrow: event.target.value })} maxLength={120} />
-				</Field>
 				<Field label='Big opening line' hint='This is the headline on the first screen.' required>
 					<TextArea rows={2} value={content.invitation.title} onChange={(event) => updateInvitation({ title: event.target.value })} maxLength={300} />
 				</Field>
