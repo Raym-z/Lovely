@@ -11,6 +11,7 @@ import {
   Mail,
   Pencil,
   Sparkles,
+  Trash2,
 } from "lucide-react";
 import { useGuestSession } from "./GuestSessionProvider";
 import { HeartShape, Squiggle } from "@/components/lovely/Doodles";
@@ -40,6 +41,8 @@ export function AccountDashboard({
   const [error, setError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [signingOut, setSigningOut] = useState(false);
+  const [deletingUid, setDeletingUid] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
     if (status !== "ready" || !user) return;
@@ -105,7 +108,52 @@ export function AccountDashboard({
   function retry() {
     setPages(null);
     setError(null);
+    setDeleteError(null);
     setRefreshKey((current) => current + 1);
+  }
+
+  async function deletePage(page: OwnedPage) {
+    if (deletingUid) return;
+
+    const confirmed = window.confirm(
+      `Delete "${page.title || "this Lovely"}"? This removes the page and its public link permanently. The edit key will stop working. This cannot be undone.`,
+    );
+    if (!confirmed) return;
+
+    const token = session?.access_token;
+    if (!token) {
+      setDeleteError("Your session has expired. Log in again to delete a page.");
+      return;
+    }
+
+    setDeletingUid(page.uid);
+    setDeleteError(null);
+
+    try {
+      const response = await fetch(`/api/account/pages/${page.uid}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = (await response.json().catch(() => ({}))) as {
+        error?: string;
+      };
+
+      if (!response.ok) {
+        throw new Error(data.error ?? "Could not delete this Lovely.");
+      }
+
+      setPages((current) =>
+        current ? current.filter((item) => item.uid !== page.uid) : current,
+      );
+    } catch (deleteFailure) {
+      setDeleteError(
+        deleteFailure instanceof Error
+          ? deleteFailure.message
+          : "Could not delete this Lovely right now.",
+      );
+    } finally {
+      setDeletingUid(null);
+    }
   }
 
   if (status === "loading") {
@@ -245,6 +293,17 @@ export function AccountDashboard({
             </div>
           ) : null}
 
+          {deleteError ? (
+            <div className="mb-3 rounded-2xl border-2 border-strawberry/25 bg-blush/60 px-4 py-3">
+              <p
+                role="alert"
+                className="font-body text-sm leading-relaxed text-[#7d4250]"
+              >
+                {deleteError}
+              </p>
+            </div>
+          ) : null}
+
           {pages && pages.length === 0 ? (
             <div className="rounded-[1.8rem] border-2 border-white bg-white/80 p-8 text-center shadow-card">
               <span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-pink-soft text-strawberry">
@@ -310,6 +369,15 @@ export function AccountDashboard({
                       Edit
                       <Pencil className="h-3 w-3" />
                     </Link>
+                    <button
+                      type="button"
+                      onClick={() => void deletePage(page)}
+                      disabled={Boolean(deletingUid)}
+                      className="inline-flex items-center gap-1.5 rounded-full border-2 border-ink/10 bg-white px-3 py-1.5 font-body text-[0.56rem] font-bold uppercase tracking-[0.1em] text-ink-soft transition-colors hover:border-strawberry hover:text-strawberry disabled:cursor-wait disabled:opacity-50"
+                    >
+                      {deletingUid === page.uid ? "Deleting..." : "Delete"}
+                      <Trash2 className="h-3 w-3" />
+                    </button>
                   </div>
                 </article>
               ))}
