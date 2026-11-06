@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { AnimatePresence, MotionConfig, motion } from "framer-motion";
-import { Heart } from "lucide-react";
+import { Heart, LogIn, Pencil, Sparkles } from "lucide-react";
 import type { LovelyContent } from "@/content/lovely";
 import { usePersistentState } from "@/lib/use-persistent-state";
 import { useHydrated } from "@/lib/use-hydrated";
@@ -11,6 +12,7 @@ import { FloatingHearts } from "./FloatingHearts";
 import { HeartShape, Squiggle } from "./Doodles";
 import { ProgressIndicator } from "./ProgressIndicator";
 import { Invitation } from "./Invitation";
+import type { MemoryPhotoImage } from "./MemoryPhoto";
 import { MemoryTimeline } from "./MemoryTimeline";
 import { CoupleQuiz } from "./CoupleQuiz";
 import { LittleGifts } from "./LittleGifts";
@@ -71,11 +73,19 @@ function Brand({ tagline }: { tagline: string }) {
 
 export default function LovelyExperience({
   content,
+  storageNamespace = "lovely.demo",
+  personalizeHref,
+  createHref,
+  imageMap = {},
 }: {
   content: LovelyContent;
+  storageNamespace?: string;
+  personalizeHref?: string;
+  createHref?: string;
+  imageMap?: Record<string, MemoryPhotoImage>;
 }) {
   const [journey, setJourney] = usePersistentState<JourneyState>(
-    "lovely.journey.v1",
+    `${storageNamespace}.journey.v1`,
     initialJourney,
   );
   const hydrated = useHydrated();
@@ -139,6 +149,24 @@ export default function LovelyExperience({
                   max={maxSection}
                   onSelect={goTo}
                 />
+              ) : personalizeHref ? (
+                <>
+                  <Link
+                    href={personalizeHref}
+                    className="group inline-flex items-center gap-1.5 rounded-full border-2 border-pink-soft bg-white/80 px-3.5 py-1.5 font-body text-[0.6rem] font-bold uppercase tracking-[0.16em] text-strawberry-deep shadow-[0_2px_0_rgba(73,52,59,0.06)] transition-colors hover:border-pink hover:bg-blush"
+                  >
+                    <Pencil className="h-3.5 w-3.5 transition-transform group-hover:-rotate-12" />
+                    Personalize
+                  </Link>
+                  <Link
+                    href="/login"
+                    aria-label="Log in"
+                    className="group inline-flex items-center gap-1.5 rounded-full border-2 border-ink/10 bg-white/70 px-3.5 py-1.5 font-body text-[0.6rem] font-bold uppercase tracking-[0.16em] text-ink-soft shadow-[0_2px_0_rgba(73,52,59,0.06)] transition-colors hover:border-pink hover:bg-white hover:text-ink"
+                  >
+                    <LogIn className="h-3.5 w-3.5" />
+                    <span className="max-[380px]:hidden">Login</span>
+                  </Link>
+                </>
               ) : (
                 <Sticker tone="pink" className="max-[360px]:hidden">
                   <Heart className="h-3 w-3" />
@@ -165,6 +193,7 @@ export default function LovelyExperience({
               {section === 1 ? (
                 <MemoryTimeline
                   content={content}
+                  imageMap={imageMap}
                   onContinue={() => goTo(2)}
                   onBack={() => goTo(0)}
                 />
@@ -174,6 +203,7 @@ export default function LovelyExperience({
                   content={content}
                   onContinue={() => goTo(3)}
                   onBack={() => goTo(1)}
+                  storageNamespace={storageNamespace}
                 />
               ) : null}
               {section === 3 ? (
@@ -181,10 +211,15 @@ export default function LovelyExperience({
                   content={content}
                   onContinue={() => goTo(4)}
                   onBack={() => goTo(2)}
+                  storageNamespace={storageNamespace}
                 />
               ) : null}
               {section === 4 ? (
-                <FinalLetter content={content} onRestart={restart} />
+                <FinalLetter
+                  content={content}
+                  onRestart={restart}
+                  storageNamespace={storageNamespace}
+                />
               ) : null}
             </motion.div>
           </AnimatePresence>
@@ -196,6 +231,15 @@ export default function LovelyExperience({
             <HeartShape className="h-3 w-3" />
             <Squiggle className="h-2.5 w-16 rotate-180" />
           </div>
+          {createHref ? (
+            <Link
+              href={createHref}
+              className="mt-1 inline-flex items-center gap-1.5 rounded-full border-2 border-pink-soft bg-white/70 px-4 py-2 font-body text-[0.6rem] font-bold uppercase tracking-[0.16em] text-strawberry transition-colors hover:border-pink hover:bg-blush"
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              Make your own Lovely
+            </Link>
+          ) : null}
           <p className="font-hand text-lg text-ink-soft/65">
             made with love, a little glitter, and one very full heart
           </p>

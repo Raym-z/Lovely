@@ -3,7 +3,9 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { HeartHandshake, X } from "lucide-react";
+import type { SecretMessage } from "@/content/lovely";
 import { cn } from "@/lib/cn";
+import { getSecretHeartDecoration } from "@/lib/secret-garden";
 import { usePersistentState } from "@/lib/use-persistent-state";
 import {
   FlowerShape,
@@ -13,48 +15,33 @@ import {
 } from "../Doodles";
 import { GiftPanel } from "../ui";
 
-const positions = [
-  { left: "10%", top: "24%", size: 26, rotate: -12, color: "text-strawberry" },
-  { left: "27%", top: "64%", size: 19, rotate: 10, color: "text-pink" },
-  { left: "43%", top: "30%", size: 30, rotate: 6, color: "text-strawberry" },
-  { left: "59%", top: "68%", size: 21, rotate: -8, color: "text-[#9b7fd6]" },
-  { left: "76%", top: "26%", size: 27, rotate: 13, color: "text-pink" },
-  { left: "90%", top: "58%", size: 18, rotate: -14, color: "text-strawberry" },
-  { left: "18%", top: "84%", size: 20, rotate: 8, color: "text-[#c49a2c]" },
-  { left: "51%", top: "84%", size: 24, rotate: -6, color: "text-strawberry" },
-  { left: "68%", top: "46%", size: 17, rotate: 15, color: "text-pink" },
-];
-
-function getPosition(index: number) {
-  return (
-    positions[index] ?? {
-      left: `${12 + ((index * 23) % 76)}%`,
-      top: `${22 + ((index * 29) % 58)}%`,
-      size: 20,
-      rotate: (index % 2 === 0 ? -1 : 1) * (6 + index * 2),
-      color: "text-strawberry",
-    }
-  );
-}
-
 export function SecretMessages({
   messages,
   className,
+  storageNamespace,
 }: {
-  messages: string[];
+  messages: SecretMessage[];
   className?: string;
+  storageNamespace: string;
 }) {
-  const [opened, setOpened] = usePersistentState<number[]>(
-    "lovely.secrets.v1",
+  const [opened, setOpened] = usePersistentState<string[]>(
+    `${storageNamespace}.secrets.v2`,
     [],
   );
-  const [active, setActive] = useState<number | null>(null);
+  const [activeId, setActiveId] = useState<string | null>(null);
   const openedSet = new Set(opened);
+  const foundCount = messages.filter((message) =>
+    openedSet.has(message.id),
+  ).length;
+  const activeIndex = messages.findIndex(
+    (message) => message.id === activeId,
+  );
+  const activeMessage = activeIndex >= 0 ? messages[activeIndex] : null;
 
-  function reveal(index: number) {
-    setActive(index);
+  function reveal(id: string) {
+    setActiveId(id);
     setOpened((previous) =>
-      previous.includes(index) ? previous : [...previous, index],
+      previous.includes(id) ? previous : [...previous, id],
     );
   }
 
@@ -63,7 +50,7 @@ export function SecretMessages({
       icon={<HeartHandshake className="h-5 w-5" />}
       title="Secret Messages"
       note="hidden in the garden, just for you"
-      meta={`${openedSet.size}/${messages.length} found`}
+      meta={`${foundCount}/${messages.length} found`}
       className={className}
     >
       <div className="relative h-[258px] overflow-hidden rounded-2xl border-2 border-dashed border-lavender bg-gradient-to-br from-lavender-soft/55 via-blush/30 to-butter-soft/40 sm:h-[286px]">
@@ -97,29 +84,33 @@ export function SecretMessages({
         </span>
 
         {messages.map((message, index) => {
-          const position = getPosition(index);
-          const isOpen = openedSet.has(index);
+          const decoration = getSecretHeartDecoration(index);
+          const isOpen = openedSet.has(message.id);
 
           return (
             <span
-              key={`${message}-${index}`}
+              key={message.id}
               className="absolute -translate-x-1/2 -translate-y-1/2"
-              style={{ left: position.left, top: position.top }}
+              style={{ left: `${message.x}%`, top: `${message.y}%` }}
             >
               <motion.button
                 type="button"
-                onClick={() => reveal(index)}
+                onClick={() => reveal(message.id)}
                 aria-label={`Secret message ${index + 1}${isOpen ? ", found" : ""}`}
                 aria-pressed={isOpen}
                 className={cn(
                   "grid h-11 w-11 place-items-center rounded-full transition-colors focus-visible:bg-white/60",
                   isOpen
                     ? "text-strawberry drop-shadow-[0_3px_7px_rgba(241,91,114,0.45)]"
-                    : position.color,
+                    : decoration.color,
                 )}
                 animate={{
                   y: [0, -4 - (index % 3), 0],
-                  rotate: [position.rotate, position.rotate + 5, position.rotate],
+                  rotate: [
+                    decoration.rotate,
+                    decoration.rotate + 5,
+                    decoration.rotate,
+                  ],
                 }}
                 transition={{
                   duration: 4 + (index % 3),
@@ -131,7 +122,7 @@ export function SecretMessages({
                 whileTap={{ scale: 0.88 }}
               >
                 <HeartShape
-                  style={{ width: position.size, height: position.size }}
+                  style={{ width: decoration.size, height: decoration.size }}
                 />
                 {isOpen ? (
                   <span className="absolute right-0.5 top-0.5 h-1.5 w-1.5 rounded-full bg-strawberry ring-2 ring-white" />
@@ -148,9 +139,9 @@ export function SecretMessages({
 
       <div className="mt-4 min-h-[118px]">
         <AnimatePresence mode="wait">
-          {active !== null ? (
+          {activeMessage ? (
             <motion.div
-              key={active}
+              key={activeMessage.id}
               initial={{ opacity: 0, y: 12, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -8 }}
@@ -159,17 +150,17 @@ export function SecretMessages({
             >
               <button
                 type="button"
-                onClick={() => setActive(null)}
+                onClick={() => setActiveId(null)}
                 aria-label="Hide secret message"
                 className="absolute right-3 top-3 grid h-7 w-7 place-items-center rounded-full bg-white/80 text-ink-soft transition-colors hover:text-strawberry"
               >
                 <X className="h-3.5 w-3.5" />
               </button>
               <p className="text-[0.55rem] font-bold uppercase tracking-[0.18em] text-strawberry">
-                secret no. {String(active + 1).padStart(2, "0")}
+                secret no. {String(activeIndex + 1).padStart(2, "0")}
               </p>
               <p className="mx-auto mt-2 max-w-lg text-pretty font-hand text-[1.4rem] leading-snug text-[#8f4557] sm:text-[1.55rem]">
-                {messages[active]}
+                {activeMessage.text}
               </p>
             </motion.div>
           ) : (
@@ -187,7 +178,7 @@ export function SecretMessages({
       </div>
 
       <p className="mt-1 text-center font-hand text-lg text-ink-soft/60">
-        {openedSet.size === messages.length
+        {foundCount === messages.length
           ? "you found them all. there might be one more in person."
           : "some are sillier than others. that's the point."}
       </p>

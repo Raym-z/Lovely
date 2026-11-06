@@ -3,36 +3,13 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { Ticket } from "lucide-react";
 import { cn } from "@/lib/cn";
-import type { Accent, Coupon } from "@/content/lovely";
+import type { Coupon } from "@/content/lovely";
+import { accentPaletteMap } from "@/lib/accent-palette";
 import { usePersistentState } from "@/lib/use-persistent-state";
 import { HeartShape } from "../Doodles";
 import { GiftPanel } from "../ui";
 
-const accents: Record<
-  Accent,
-  { stub: string; notch: string; button: string }
-> = {
-  pink: {
-    stub: "bg-pink-soft text-strawberry-deep",
-    notch: "bg-[#fdfaf6]",
-    button: "border-strawberry/30 text-strawberry-deep hover:bg-pink-soft",
-  },
-  lavender: {
-    stub: "bg-lavender-soft text-[#7b60b5]",
-    notch: "bg-[#fdfaf6]",
-    button: "border-[#c7b4f4]/60 text-[#7b60b5] hover:bg-lavender-soft",
-  },
-  butter: {
-    stub: "bg-butter-soft text-[#a5771c]",
-    notch: "bg-[#fdfaf6]",
-    button: "border-[#e7cf8c]/70 text-[#a5771c] hover:bg-butter-soft",
-  },
-  mint: {
-    stub: "bg-mint-soft text-[#3d8a6d]",
-    notch: "bg-[#fdfaf6]",
-    button: "border-[#a9ddc9]/70 text-[#3d8a6d] hover:bg-mint-soft",
-  },
-};
+const couponNotch = "bg-[#fdfaf6]";
 
 function CouponTicket({
   coupon,
@@ -43,7 +20,7 @@ function CouponTicket({
   redeemed: boolean;
   onToggle: () => void;
 }) {
-  const accent = accents[coupon.accent];
+  const accent = accentPaletteMap[coupon.accent];
 
   return (
     <motion.div
@@ -58,7 +35,7 @@ function CouponTicket({
       <div
         className={cn(
           "relative flex w-[68px] shrink-0 flex-col items-center justify-center gap-1.5 py-4",
-          accent.stub,
+          accent.soft,
         )}
       >
         <HeartShape className="h-5 w-5" />
@@ -79,14 +56,14 @@ function CouponTicket({
         aria-hidden="true"
         className={cn(
           "absolute left-[68px] top-0 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full",
-          accent.notch,
+          couponNotch,
         )}
       />
       <span
         aria-hidden="true"
         className={cn(
           "absolute bottom-0 left-[68px] h-3.5 w-3.5 -translate-x-1/2 translate-y-1/2 rounded-full",
-          accent.notch,
+          couponNotch,
         )}
       />
 
@@ -107,7 +84,7 @@ function CouponTicket({
             aria-pressed={redeemed}
             className={cn(
               "rounded-full border-2 bg-white px-3 py-1.5 font-body text-[0.62rem] font-bold uppercase tracking-[0.1em] transition-colors",
-              accent.button,
+              accent.couponButton,
             )}
           >
             {redeemed ? "Use again" : "Redeem"}
@@ -137,12 +114,14 @@ function CouponTicket({
 export function LoveCoupons({
   coupons,
   className,
+  storageNamespace,
 }: {
   coupons: Coupon[];
   className?: string;
+  storageNamespace: string;
 }) {
   const [redeemed, setRedeemed] = usePersistentState<Record<string, boolean>>(
-    "lovely.coupons.v1",
+    `${storageNamespace}.coupons.v1`,
     {},
   );
 

@@ -4,9 +4,33 @@ export type PhotoVariant =
   | "rain"
   | "roadtrip"
   | "cozy"
-  | "dance";
+  | "dance"
+  | "bookstore"
+  | "cherry-blossom"
+  | "beach-picnic"
+  | "city-night"
+  | "rooftop"
+  | "flower-market"
+  | "autumn"
+  | "arcade"
+  | "mountain"
+  | "sunday-morning";
 
-export type Accent = "pink" | "lavender" | "butter" | "mint";
+export type Accent =
+  | "pink"
+  | "lavender"
+  | "butter"
+  | "mint"
+  | "peach"
+  | "baby-blue"
+  | "dusty-rose"
+  | "periwinkle"
+  | "sage"
+  | "cream"
+  | "coral"
+  | "powder-blue";
+
+export type MemoryPhotoSource = "template" | "upload";
 
 export interface Memory {
   id: string;
@@ -16,6 +40,8 @@ export interface Memory {
   caption: string;
   detail: string;
   photo: PhotoVariant;
+  photoSource?: MemoryPhotoSource;
+  photoImageId?: string | null;
   accent: Accent;
 }
 
@@ -64,6 +90,13 @@ export interface FinalLetter {
   };
 }
 
+export interface SecretMessage {
+  id: string;
+  text: string;
+  x: number;
+  y: number;
+}
+
 export interface LovelyContent {
   sender: string;
   recipient: string;
@@ -81,9 +114,13 @@ export interface LovelyContent {
   coupons: Coupon[];
   compliments: string[];
   reasons: string[];
-  secretMessages: string[];
+  secretMessages: SecretMessage[];
+  emergencyNote: string;
   finalLetter: FinalLetter;
 }
+
+export const defaultEmergencyNote =
+  "If you're having a hard day, come back to this page. You are loved on the good days, the quiet days, and the days you don't feel like yourself. Especially those.";
 
 export const lovelyContent: LovelyContent = {
   sender: "Alex",
@@ -308,16 +345,62 @@ export const lovelyContent: LovelyContent = {
     "You choose me every day, even the boring days. Especially the boring days.",
   ],
   secretMessages: [
-    "I still keep the ticket stub from our first movie in my wallet. Don't tell anyone.",
-    "Sometimes I replay our conversations in my head when I can't sleep.",
-    "I practiced saying hi to you for three days before we actually met.",
-    "You're in my five-year plan. You're kind of the whole thing, actually.",
-    "I'm not sure I believed in 'the one' until you laughed at my dumb joke.",
-    "I love you in the small hours too, not just the pretty ones.",
-    "The first time you called me by my nickname, I smiled for the rest of the day.",
-    "I have a note on my phone titled 'things to tell Mia' and it is embarrassingly long.",
-    "Every time a song we like comes on, I turn it up a little for you.",
+    {
+      id: "secret-1",
+      text: "I still keep the ticket stub from our first movie in my wallet. Don't tell anyone.",
+      x: 10,
+      y: 24,
+    },
+    {
+      id: "secret-2",
+      text: "Sometimes I replay our conversations in my head when I can't sleep.",
+      x: 27,
+      y: 64,
+    },
+    {
+      id: "secret-3",
+      text: "I practiced saying hi to you for three days before we actually met.",
+      x: 43,
+      y: 30,
+    },
+    {
+      id: "secret-4",
+      text: "You're in my five-year plan. You're kind of the whole thing, actually.",
+      x: 59,
+      y: 68,
+    },
+    {
+      id: "secret-5",
+      text: "I'm not sure I believed in 'the one' until you laughed at my dumb joke.",
+      x: 76,
+      y: 26,
+    },
+    {
+      id: "secret-6",
+      text: "I love you in the small hours too, not just the pretty ones.",
+      x: 90,
+      y: 58,
+    },
+    {
+      id: "secret-7",
+      text: "The first time you called me by my nickname, I smiled for the rest of the day.",
+      x: 18,
+      y: 84,
+    },
+    {
+      id: "secret-8",
+      text: "I have a note on my phone titled 'things to tell Mia' and it is embarrassingly long.",
+      x: 51,
+      y: 84,
+    },
+    {
+      id: "secret-9",
+      text: "Every time a song we like comes on, I turn it up a little for you.",
+      x: 68,
+      y: 46,
+    },
   ],
+  emergencyNote: defaultEmergencyNote,
   finalLetter: {
     eyebrow: "One last thing",
     title: "There's just one more thing...",
@@ -332,7 +415,7 @@ export const lovelyContent: LovelyContent = {
       "So here's my very simple question.",
     ],
     signature: "With all my love, always,",
-    signatureName: "Alex",
+    signatureName: "",
     postscript:
       "P.S. You're my favorite person. This is not up for debate.",
     question: "Will you be my Valentine?",

@@ -3,24 +3,28 @@
 import type { ReactNode } from "react";
 import { motion } from "framer-motion";
 import { ArrowRight, ChevronLeft, Sparkles } from "lucide-react";
+import type { Accent } from "@/content/lovely";
+import { accentPalette } from "@/lib/accent-palette";
 import { cn } from "@/lib/cn";
 import { HeartShape, Squiggle } from "./Doodles";
 
-type Tone = "pink" | "lavender" | "butter" | "mint" | "white";
+type Tone = Accent | "white";
+
+const accentStickerTones = Object.fromEntries(
+  accentPalette.map((entry) => [entry.value, entry.sticker]),
+) as Record<Accent, string>;
+
+const accentPillTones = Object.fromEntries(
+  accentPalette.map((entry) => [entry.value, entry.accentTone]),
+) as Record<Accent, string>;
 
 const stickerTones: Record<Tone, string> = {
-  pink: "border-pink-soft bg-blush text-strawberry-deep",
-  lavender: "border-lavender bg-lavender-soft text-[#7b60b5]",
-  butter: "border-butter bg-butter-soft text-[#a5771c]",
-  mint: "border-mint bg-mint-soft text-[#3d8a6d]",
+  ...accentStickerTones,
   white: "border-white bg-white/80 text-ink-soft",
 };
 
 const accentTones: Record<Tone, string> = {
-  pink: "bg-blush text-strawberry-deep",
-  lavender: "bg-lavender-soft text-[#7b60b5]",
-  butter: "bg-butter-soft text-[#a5771c]",
-  mint: "bg-mint-soft text-[#3d8a6d]",
+  ...accentPillTones,
   white: "bg-white text-ink-soft",
 };
 
@@ -115,6 +119,9 @@ export function SectionIntro({
   );
 }
 
+export const buttonBaseClasses =
+  "inline-flex h-[3.25rem] items-center justify-center gap-2.5 whitespace-nowrap rounded-full px-7 font-display text-[0.98rem] font-semibold";
+
 export function PrimaryButton({
   children,
   onClick,
@@ -142,7 +149,8 @@ export function PrimaryButton({
       whileTap={disabled ? undefined : { scale: 0.97, y: 2 }}
       transition={{ type: "spring", stiffness: 420, damping: 26 }}
       className={cn(
-        "group inline-flex items-center justify-center gap-2.5 rounded-full bg-strawberry px-7 py-3.5 font-display text-[0.98rem] font-semibold text-white shadow-button transition-colors duration-200 hover:bg-[#f56a80] disabled:cursor-wait disabled:opacity-80",
+        buttonBaseClasses,
+        "group bg-strawberry text-white shadow-button transition-colors duration-200 hover:bg-[#f56a80] disabled:cursor-wait disabled:opacity-80",
         className,
       )}
     >
@@ -159,23 +167,19 @@ export function GhostButton({
   onClick,
   className,
   icon = true,
-  size = "sm",
 }: {
   children: ReactNode;
   onClick?: () => void;
   className?: string;
   icon?: boolean;
-  size?: "sm" | "lg";
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
       className={cn(
-        "group inline-flex items-center justify-center rounded-full border-2 border-ink/10 bg-white/70 font-semibold text-ink-soft transition-colors hover:border-pink hover:bg-white hover:text-ink",
-        size === "lg"
-          ? "gap-2.5 px-7 py-3 font-display text-[0.98rem]"
-          : "gap-1.5 px-4 py-2.5 font-body text-sm",
+        buttonBaseClasses,
+        "group border-2 border-ink/10 bg-white/70 text-ink-soft transition-colors hover:border-pink hover:bg-white hover:text-ink",
         className,
       )}
     >

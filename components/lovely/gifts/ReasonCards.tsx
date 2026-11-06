@@ -7,14 +7,14 @@ import { usePersistentState } from "@/lib/use-persistent-state";
 import { HeartShape } from "../Doodles";
 import { GiftPanel } from "../ui";
 
-const cardStyles = [
+export const reasonCardStyles = [
   "border-pink/70 bg-blush/55 hover:border-pink",
   "border-lavender bg-lavender-soft/55 hover:border-[#c3aef3]",
   "border-butter bg-butter-soft/55 hover:border-[#f0d58c]",
   "border-mint bg-mint-soft/55 hover:border-[#a9ddc9]",
 ];
 
-const iconColors = [
+export const reasonIconColors = [
   "text-strawberry",
   "text-[#8a6cc4]",
   "text-[#c29427]",
@@ -24,12 +24,14 @@ const iconColors = [
 export function ReasonCards({
   reasons,
   className,
+  storageNamespace,
 }: {
   reasons: string[];
   className?: string;
+  storageNamespace: string;
 }) {
   const [opened, setOpened] = usePersistentState<string[]>(
-    "lovely.reasons.v1",
+    `${storageNamespace}.reasons.v1`,
     [],
   );
   const openedSet = new Set(opened);
@@ -54,7 +56,7 @@ export function ReasonCards({
         {reasons.map((reason, index) => {
           const id = `reason-${index}`;
           const isOpen = openedSet.has(id);
-          const tone = index % cardStyles.length;
+          const tone = index % reasonCardStyles.length;
 
           return (
             <motion.button
@@ -72,14 +74,14 @@ export function ReasonCards({
               whileTap={{ scale: 0.985 }}
               className={cn(
                 "relative flex min-h-[150px] flex-col items-center justify-center overflow-hidden rounded-2xl border-2 p-3 text-center transition-colors duration-200",
-                cardStyles[tone],
+                reasonCardStyles[tone],
               )}
             >
               <span
                 aria-hidden="true"
                 className={cn(
                   "absolute -right-1.5 -top-1.5 text-current opacity-30",
-                  iconColors[tone],
+                  reasonIconColors[tone],
                 )}
               >
                 <HeartShape className="h-7 w-7 rotate-12" />
@@ -116,20 +118,24 @@ export function ReasonCards({
                       <span
                         className={cn(
                           "absolute inset-x-0 bottom-0 h-9 rounded-md border-2 border-current bg-white/60",
-                          iconColors[tone],
+                          reasonIconColors[tone],
                         )}
                       />
                       <span
                         className={cn(
                           "absolute inset-x-0 bottom-[18px] top-1.5 rounded-md border-2 border-current bg-white/85",
-                          iconColors[tone],
+                          reasonIconColors[tone],
                         )}
                         style={{
                           clipPath: "polygon(0 0, 50% 62%, 100% 0, 100% 100%, 0 100%)",
                         }}
                       />
-                      <span className="relative mt-2.5 grid h-6 w-6 place-items-center rounded-full bg-strawberry text-white shadow-sm">
-                        <HeartShape className="h-3 w-3" />
+                      <span className="absolute inset-0 grid place-items-center">
+                        <span className="grid h-6 w-6 place-items-center rounded-full bg-strawberry text-white shadow-sm">
+                          <HeartShape
+                            style={{ width: "0.625rem", height: "0.625rem" }}
+                          />
+                        </span>
                       </span>
                     </span>
                     <span className="mt-2.5 font-display text-[0.82rem] font-semibold leading-tight text-ink">

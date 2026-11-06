@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Heart, Sparkles } from "lucide-react";
 import type { LovelyContent } from "@/content/lovely";
 import { usePersistentState } from "@/lib/use-persistent-state";
+import { cn } from "@/lib/cn";
 import { ConfettiEffect } from "./ConfettiEffect";
 import {
   FlowerShape,
@@ -13,6 +14,7 @@ import {
   StarShape,
 } from "./Doodles";
 import {
+  buttonBaseClasses,
   GhostButton,
   PrimaryButton,
   SectionIntro,
@@ -268,7 +270,7 @@ function Celebration({
             Read it again
             <Heart className="h-4 w-4" />
           </PrimaryButton>
-          <GhostButton onClick={onRestart} icon={false} size="lg">
+          <GhostButton onClick={onRestart} icon={false}>
             From the very beginning
           </GhostButton>
         </div>
@@ -284,13 +286,15 @@ function Celebration({
 export function FinalLetter({
   content,
   onRestart,
+  storageNamespace,
 }: {
   content: LovelyContent;
   onRestart: () => void;
+  storageNamespace: string;
 }) {
   const { finalLetter } = content;
   const [state, setState] = usePersistentState<FinalState>(
-    "lovely.final.v1",
+    `${storageNamespace}.final.v1`,
     initialState,
   );
   const [opening, setOpening] = useState(false);
@@ -439,7 +443,7 @@ export function FinalLetter({
                       {finalLetter.signature}
                     </p>
                     <p className="font-hand text-[2.1rem] leading-tight text-strawberry">
-                      {finalLetter.signatureName}
+                      {finalLetter.signatureName || content.sender}
                     </p>
                   </div>
 
@@ -474,7 +478,10 @@ export function FinalLetter({
                   onClick={handleThink}
                   whileHover={{ rotate: -1.5, scale: 1.02 }}
                   whileTap={{ scale: 0.96 }}
-                  className="inline-flex items-center justify-center gap-2 rounded-full border-2 border-ink/10 bg-white px-6 py-3 font-display text-sm font-semibold text-ink-soft transition-colors hover:border-pink hover:text-strawberry"
+                  className={cn(
+                    buttonBaseClasses,
+                    "gap-2 rounded-full border-2 border-ink/10 bg-white text-ink-soft transition-colors hover:border-pink hover:text-strawberry",
+                  )}
                 >
                   {thinkLabel}
                 </motion.button>

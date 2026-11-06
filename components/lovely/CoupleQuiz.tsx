@@ -197,13 +197,15 @@ export function CoupleQuiz({
   content,
   onContinue,
   onBack,
+  storageNamespace,
 }: {
   content: LovelyContent;
   onContinue: () => void;
   onBack: () => void;
+  storageNamespace: string;
 }) {
   const [quiz, setQuiz] = usePersistentState<QuizState>(
-    "lovely.quiz.v1",
+    `${storageNamespace}.quiz.v1`,
     initialQuiz,
   );
   const [burst, setBurst] = useState(0);
@@ -338,6 +340,9 @@ export function CoupleQuiz({
                           !isCorrectOption &&
                           !isChosen &&
                           "border-ink/5 bg-paper/50 text-ink/40",
+                        current.options.length % 2 === 1 &&
+                          index === current.options.length - 1 &&
+                          "sm:col-span-2",
                       )}
                     >
                       <span
