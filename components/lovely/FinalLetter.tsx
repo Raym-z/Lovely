@@ -5,11 +5,10 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Heart, Sparkles } from "lucide-react";
 import type { LovelyContent } from "@/content/lovely";
 import { usePersistentState } from "@/lib/use-persistent-state";
-import { cn } from "@/lib/cn";
 import { ConfettiEffect } from "./ConfettiEffect";
 import { CreamEnvelope } from "./CreamEnvelope";
 import { FlowerShape, HeartShape, SparkleShape, StarShape } from "./Doodles";
-import { buttonBaseClasses, GhostButton, PrimaryButton, SectionIntro, Sticker } from "./ui";
+import { GhostButton, SectionIntro, Sticker } from "./ui";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
@@ -119,13 +118,13 @@ function Celebration({ content, burst, onReadAgain, onRestart }: { content: Love
 				<p className='mt-4 max-w-md text-pretty font-body text-sm leading-relaxed text-ink-soft sm:text-base'>{celebration.note}</p>
 				<p className='mt-5 font-hand text-2xl text-ink'>with all my love, {content.sender}</p>
 
-				<div className='mt-8 flex flex-col items-center gap-3 sm:flex-row'>
-					<PrimaryButton onClick={onReadAgain} icon={false}>
-						Read it again
+				<div className='mt-8 flex flex-row items-center justify-center gap-2 sm:gap-3'>
+					<GhostButton onClick={onReadAgain} icon={false} tone='strawberry' compact>
+						Read the letter again
 						<Heart className='h-4 w-4' />
-					</PrimaryButton>
-					<GhostButton onClick={onRestart} icon={false}>
-						From the very beginning
+					</GhostButton>
+					<GhostButton onClick={onRestart} icon={false} compact>
+						Back to the beginning
 					</GhostButton>
 				</div>
 
@@ -257,23 +256,13 @@ export function FinalLetter({ content, onRestart, storageNamespace }: { content:
 							<h3 className='mt-4 text-balance font-display text-[2rem] font-semibold leading-tight text-ink sm:text-4xl'>{finalLetter.question}</h3>
 							<p className='mt-2 font-hand text-lg text-ink-soft/75'>no wrong answers. (there is one right answer.)</p>
 
-							<div className='mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row'>
-								<GhostButton
-									onClick={accept}
-									icon={false}
-									tone='strawberry'
-								>
+							<div className='mt-6 flex flex-row items-center justify-center gap-2 sm:gap-3'>
+								<GhostButton onClick={accept} icon={false} tone='strawberry' compact>
 									{finalLetter.yesLabel}
 								</GhostButton>
-								<motion.button
-									type='button'
-									onClick={handleThink}
-									whileHover={{ rotate: -1.5, scale: 1.02 }}
-									whileTap={{ scale: 0.96 }}
-									className={cn(buttonBaseClasses, "gap-2 rounded-full border-2 border-ink/10 bg-white text-ink-soft transition-colors hover:border-pink hover:text-strawberry")}
-								>
+								<GhostButton onClick={handleThink} icon={false} compact>
 									{thinkLabel}
-								</motion.button>
+								</GhostButton>
 							</div>
 
 							<AnimatePresence mode='wait'>

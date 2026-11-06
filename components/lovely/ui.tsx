@@ -119,6 +119,7 @@ export function GhostButton({
 	icon = true,
 	iconSide = "left",
 	tone = "default",
+	compact = false,
 }: {
 	children: ReactNode;
 	onClick?: () => void;
@@ -126,17 +127,21 @@ export function GhostButton({
 	icon?: boolean;
 	iconSide?: "left" | "right";
 	tone?: "default" | "strawberry";
+	compact?: boolean;
 }) {
 	const toneClasses =
 		tone === "strawberry"
 			? "border-strawberry bg-strawberry text-white hover:border-[#f56a80] hover:bg-[#f56a80] hover:text-white"
 			: "border-ink/10 bg-white/70 text-ink-soft hover:border-pink hover:bg-white hover:text-ink";
+	const baseClasses = compact
+		? "inline-flex h-[2.8rem] items-center justify-center gap-1.5 whitespace-nowrap rounded-full px-3 font-display text-[0.72rem] font-semibold sm:h-[3.25rem] sm:gap-2.5 sm:px-7 sm:text-[0.98rem]"
+		: buttonBaseClasses;
 
 	return (
 		<button
 			type='button'
 			onClick={onClick}
-			className={cn(buttonBaseClasses, "group border-2 transition-colors", toneClasses, className)}
+			className={cn(baseClasses, "group border-2 transition-colors", toneClasses, className)}
 		>
 			{icon && iconSide === "left" ? (
 				<ArrowLeft className='h-4 w-4 transition-transform duration-200 group-hover:-translate-x-0.5' />
