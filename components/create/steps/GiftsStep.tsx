@@ -4,7 +4,8 @@ import type { Dispatch, SetStateAction } from "react";
 import { defaultEmergencyNote } from "@/content/lovely";
 import type { Coupon, LovelyContent } from "@/content/lovely";
 import { makeId } from "@/lib/ids";
-import { AddButton, CollapsibleCard, EditorCard, Field, SegmentedTabs, Select, StringListEditor, TextArea, TextInput } from "../fields";
+import { reconcileSecretMessages } from "@/lib/secret-garden";
+import { AddButton, CollapsibleCard, EditorCard, Field, OptionPicker, SegmentedTabs, StringListEditor, TextArea, TextInput } from "../fields";
 import { accentOptions } from "../options";
 
 export type GiftTab = "coupons" | "compliments" | "reasons" | "secrets" | "note";
@@ -59,8 +60,26 @@ export function GiftsStep({
 		onActiveCouponChange(coupon.id);
 	}
 
-	function setList(field: "compliments" | "reasons" | "secretMessages", items: string[]) {
+	function setList(field: "compliments" | "reasons", items: string[]) {
 		setContent((previous) => ({ ...previous, [field]: items }));
+	}
+
+	function setSecretMessages(items: string[]) {
+		setContent((previous) => ({
+			...previous,
+			secretMessages: reconcileSecretMessages(previous.secretMessages, items),
+		}));
+	}
+
+	function reorderSecretMessages(from: number, to: number) {
+		setContent((previous) => {
+			if (from === to) return previous;
+			const next = [...previous.secretMessages];
+			const [moved] = next.splice(from, 1);
+			if (!moved) return previous;
+			next.splice(to, 0, moved);
+			return { ...previous, secretMessages: next };
+		});
 	}
 
 	return (
@@ -107,20 +126,12 @@ export function GiftsStep({
 									<TextArea rows={2} value={coupon.description} onChange={(event) => updateCoupon(index, { description: event.target.value })} maxLength={500} />
 								</Field>
 								<Field label='Ticket color' required>
-									<Select
+									<OptionPicker
 										value={coupon.accent}
-										onChange={(event) =>
-											updateCoupon(index, {
-												accent: event.target.value as Coupon["accent"],
-											})
-										}
-									>
-										{accentOptions.map((option) => (
-											<option key={option.value} value={option.value}>
-												{option.label}
-											</option>
-										))}
-									</Select>
+										onChange={(accent) => updateCoupon(index, { accent })}
+										options={accentOptions}
+										label='Ticket color'
+									/>
 								</Field>
 							</CollapsibleCard>
 						))}
@@ -143,7 +154,10 @@ export function GiftsStep({
 						addLabel='Add a compliment'
 						min={1}
 						max={60}
-						rows={2}
+						rows={1}
+						compact
+						tone='pink'
+						itemMaxLength={300}
 					/>
 				</EditorCard>
 			) : null}
@@ -157,7 +171,10 @@ export function GiftsStep({
 						addLabel='Add a reason'
 						min={1}
 						max={30}
-						rows={2}
+						rows={1}
+						compact
+						tone='rose'
+						itemMaxLength={500}
 					/>
 				</EditorCard>
 			) : null}
@@ -165,13 +182,18 @@ export function GiftsStep({
 			{tab === "secrets" ? (
 				<EditorCard title='Secret messages' description='Scattered as hearts in the little garden. These can be sillier, quieter, or the things you struggle to say out loud.' accent='lavender'>
 					<StringListEditor
-						items={content.secretMessages}
-						onChange={(items) => setList("secretMessages", items)}
+						items={content.secretMessages.map((message) => message.text)}
+						onChange={setSecretMessages}
 						placeholder="A small secret they don't know yet..."
 						addLabel='Add a secret'
 						min={1}
 						max={30}
-						rows={2}
+						rows={1}
+						compact
+						tone='lavender'
+						itemMaxLength={500}
+						itemIds={content.secretMessages.map((message) => message.id)}
+						onMove={reorderSecretMessages}
 					/>
 				</EditorCard>
 			) : null}

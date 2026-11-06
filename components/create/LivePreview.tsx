@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
-import { Heart, Maximize2, Sparkles, X } from "lucide-react";
+import { ArrowRight, Heart, Maximize2, Quote, Sparkles, X } from "lucide-react";
 import { defaultEmergencyNote } from "@/content/lovely";
 import type {
   Accent,
@@ -603,14 +603,133 @@ function ReasonsPreview({ reasons }: { reasons: string[] }) {
   );
 }
 
+function ComplimentsPreview({ compliments }: { compliments: string[] }) {
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [count, setCount] = useState(0);
+
+  const currentIndex =
+    selectedIndex !== null && selectedIndex < compliments.length
+      ? selectedIndex
+      : null;
+
+  function giveCompliment() {
+    if (compliments.length === 0) return;
+
+    let next = 0;
+    if (compliments.length > 1) {
+      const eligible = compliments
+        .map((_, index) => index)
+        .filter((index) => index !== currentIndex);
+      next = eligible[Math.floor(Math.random() * eligible.length)];
+    }
+
+    setSelectedIndex(next);
+    setCount((value) => value + 1);
+  }
+
+  return (
+    <div className="text-left">
+      <div className="flex items-start justify-between gap-1.5">
+        <div className="flex min-w-0 flex-1 items-start gap-1.5">
+          <span className="grid h-7 w-7 shrink-0 place-items-center rounded-xl bg-white/70 text-strawberry">
+            <Sparkles className="h-3.5 w-3.5" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="truncate font-display text-[0.82rem] font-semibold leading-tight text-ink">
+              Random Compliments
+            </p>
+            <p className="mt-0.5 truncate font-hand text-[0.7rem] leading-tight text-ink-soft">
+              because you deserve to hear it twice
+            </p>
+          </div>
+        </div>
+        <span className="inline-flex w-[3.6rem] shrink-0 items-center justify-center rounded-full bg-white/70 px-1 py-0.5 text-center font-body text-[0.4rem] font-bold uppercase tracking-[0.06em] text-ink-soft/60">
+          {count > 0 ? `${count} given` : "100% true"}
+        </span>
+      </div>
+
+      <div className="relative mt-2.5 flex min-h-[150px] flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-pink/70 bg-blush/30 p-4 text-center">
+        <Quote className="absolute left-3 top-3 h-4 w-4 -scale-x-100 text-pink/50" />
+        <HeartShape className="absolute bottom-3 right-4 h-4 w-4 rotate-12 text-pink/55" />
+
+        <AnimatePresence mode="wait">
+          {currentIndex === null ? (
+            <motion.p
+              key="empty"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0, y: -8 }}
+              className="max-w-full font-hand text-[1.02rem] leading-snug text-ink-soft/70"
+            >
+              Every compliment in here is true. Tap below and I&apos;ll prove
+              it.
+            </motion.p>
+          ) : (
+            <motion.p
+              key={`${currentIndex}-${count}`}
+              initial={{ opacity: 0, y: 12, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -8, scale: 0.98 }}
+              transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+              className="max-w-full break-words text-pretty font-hand text-[1.16rem] leading-snug text-[#8f4557]"
+            >
+              &ldquo;{compliments[currentIndex]}&rdquo;
+            </motion.p>
+          )}
+        </AnimatePresence>
+
+        {count > 0 ? (
+          <motion.span
+            key={count}
+            aria-hidden="true"
+            className="pointer-events-none absolute right-4 top-3 text-strawberry"
+            initial={{ opacity: 0, scale: 0.4, y: 4 }}
+            animate={{ opacity: [0, 1, 0], scale: [0.4, 1.1, 0.9], y: -22 }}
+            transition={{ duration: 0.85, ease: "easeOut" }}
+          >
+            <HeartShape className="h-3.5 w-3.5" />
+          </motion.span>
+        ) : null}
+      </div>
+
+      <div className="mt-3 flex flex-col items-center gap-1.5">
+        <motion.button
+          type="button"
+          onClick={giveCompliment}
+          disabled={compliments.length === 0}
+          whileHover={
+            compliments.length > 0 ? { scale: 1.03, y: -1 } : undefined
+          }
+          whileTap={
+            compliments.length > 0 ? { scale: 0.97, y: 2 } : undefined
+          }
+          className="inline-flex items-center gap-1.5 rounded-full bg-strawberry px-4 py-2 font-display text-[0.68rem] font-semibold text-white shadow-[0_3px_0_#d94360,0_10px_18px_-10px_rgba(241,91,114,0.65)] transition-colors hover:bg-[#f56a80] disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          Tell me something sweet
+          <ArrowRight className="h-3 w-3" />
+        </motion.button>
+        <p className="font-hand text-[0.76rem] leading-tight text-ink-soft/60">
+          {count === 0
+            ? "no repeats back-to-back. I checked."
+            : count === 1
+              ? "see? told you."
+              : "still true. all of them."}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 function GiftsPreview({
   content,
   activeCouponId,
   giftTab,
+  onSecretPositionChange,
 }: {
   content: LovelyContent;
   activeCouponId: string | null;
   giftTab: GiftTab;
+  onSecretPositionChange: (id: string, x: number, y: number) => void;
 }) {
   const activeIndex = content.coupons.findIndex(
     (coupon) => coupon.id === activeCouponId,
@@ -619,30 +738,7 @@ function GiftsPreview({
   const coupon = content.coupons[index];
 
   if (giftTab === "compliments") {
-    return (
-      <>
-        <Eyebrow>compliments · {content.compliments.length}</Eyebrow>
-        <h3 className="mt-2 font-display text-[1.35rem] font-semibold leading-tight text-ink">
-          A few nice things about you
-        </h3>
-        <div className="mt-3 space-y-2 text-left">
-          {content.compliments.length === 0 ? (
-            <p className="rounded-xl bg-white/70 p-3 font-body text-xs text-ink-soft/70">
-              Add a compliment and it will show up here.
-            </p>
-          ) : (
-            content.compliments.slice(0, 3).map((compliment, complimentIndex) => (
-              <p
-                key={complimentIndex}
-                className="line-clamp-3 rounded-xl bg-white/80 px-3 py-2 font-hand text-[0.92rem] leading-snug text-strawberry-deep"
-              >
-                &ldquo;{compliment}&rdquo;
-              </p>
-            ))
-          )}
-        </div>
-      </>
-    );
+    return <ComplimentsPreview compliments={content.compliments} />;
   }
 
   if (giftTab === "reasons") {
@@ -650,7 +746,12 @@ function GiftsPreview({
   }
 
   if (giftTab === "secrets") {
-    return <SecretGardenPreview messages={content.secretMessages} />;
+    return (
+      <SecretGardenPreview
+        messages={content.secretMessages}
+        onPositionChange={onSecretPositionChange}
+      />
+    );
   }
 
   if (giftTab === "note") {
@@ -1110,6 +1211,7 @@ export function LivePreview({
   activeCouponId,
   activeLetterSectionId,
   giftTab,
+  onSecretPositionChange,
 }: {
   content: LovelyContent;
   step: PreviewStep;
@@ -1118,6 +1220,7 @@ export function LivePreview({
   activeCouponId: string | null;
   activeLetterSectionId: LetterSectionId;
   giftTab: GiftTab;
+  onSecretPositionChange: (id: string, x: number, y: number) => void;
 }) {
   const meta = stepMeta[step];
   const activeLetterSection =
@@ -1171,6 +1274,7 @@ export function LivePreview({
               content={content}
               activeCouponId={activeCouponId}
               giftTab={giftTab}
+              onSecretPositionChange={onSecretPositionChange}
             />
           ) : step === "letter" ? (
             <LetterPreview

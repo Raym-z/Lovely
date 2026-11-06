@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { defaultEmergencyNote, type LovelyContent } from "@/content/lovely";
+import { normalizeSecretMessages } from "@/lib/secret-garden";
 
 const photoVariantSchema = z.enum([
   "cafe",
@@ -8,6 +9,16 @@ const photoVariantSchema = z.enum([
   "roadtrip",
   "cozy",
   "dance",
+  "bookstore",
+  "cherry-blossom",
+  "beach-picnic",
+  "city-night",
+  "rooftop",
+  "flower-market",
+  "autumn",
+  "arcade",
+  "mountain",
+  "sunday-morning",
 ]);
 
 const accentSchema = z.enum(["pink", "lavender", "butter", "mint"]);
@@ -51,6 +62,27 @@ const quizQuestionSchema = z
       question.options.some((option) => option.id === question.answer),
     "The correct answer must match one of the options.",
   );
+
+const secretMessageSchema = z.object({
+  id: requiredText(80),
+  text: requiredText(500),
+  x: z.number().min(0).max(100),
+  y: z.number().min(0).max(100),
+});
+
+const secretMessagesSchema = z.preprocess(
+  (value) => normalizeSecretMessages(value),
+  z
+    .array(secretMessageSchema)
+    .min(1)
+    .max(30)
+    .refine(
+      (messages) =>
+        new Set(messages.map((message) => message.id)).size ===
+        messages.length,
+      "Secret message ids must be unique.",
+    ),
+);
 
 const couponSchema = z.object({
   id: requiredText(80),
@@ -100,7 +132,7 @@ export const lovelyContentSchema: z.ZodType<LovelyContent> = z.object({
   coupons: z.array(couponSchema).min(1).max(20),
   compliments: z.array(requiredText(300)).min(1).max(60),
   reasons: z.array(requiredText(500)).min(1).max(30),
-  secretMessages: z.array(requiredText(500)).min(1).max(30),
+  secretMessages: secretMessagesSchema,
   emergencyNote: requiredText(1200).default(defaultEmergencyNote),
   finalLetter: finalLetterSchema,
 });

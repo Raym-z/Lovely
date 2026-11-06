@@ -2,17 +2,27 @@
 
 import type { Dispatch, SetStateAction } from "react";
 import type { LovelyContent, Memory } from "@/content/lovely";
+import { MemoryPhoto } from "@/components/lovely/MemoryPhoto";
 import { makeId } from "@/lib/ids";
 import {
   AddButton,
   CollapsibleCard,
   EditorCard,
   Field,
-  Select,
+  OptionPicker,
   TextArea,
   TextInput,
 } from "../fields";
 import { accentOptions, photoOptions } from "../options";
+
+const scenePickerOptions = photoOptions.map((option) => ({
+  ...option,
+  preview: (
+    <span className="h-10 w-14 shrink-0 overflow-hidden rounded-lg shadow-sm ring-1 ring-ink/5">
+      <MemoryPhoto variant={option.value} className="h-full w-full rounded-lg" />
+    </span>
+  ),
+}));
 
 export function StoryStep({
   content,
@@ -158,36 +168,20 @@ export function StoryStep({
               </Field>
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field label="Photo scene" required>
-                  <Select
+                  <OptionPicker
                     value={memory.photo}
-                    onChange={(event) =>
-                      updateMemory(index, {
-                        photo: event.target.value as Memory["photo"],
-                      })
-                    }
-                  >
-                    {photoOptions.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </Select>
+                    onChange={(photo) => updateMemory(index, { photo })}
+                    options={scenePickerOptions}
+                    label="Photo scene"
+                  />
                 </Field>
                 <Field label="Sticker color" required>
-                  <Select
+                  <OptionPicker
                     value={memory.accent}
-                    onChange={(event) =>
-                      updateMemory(index, {
-                        accent: event.target.value as Memory["accent"],
-                      })
-                    }
-                  >
-                    {accentOptions.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </Select>
+                    onChange={(accent) => updateMemory(index, { accent })}
+                    options={accentOptions}
+                    label="Sticker color"
+                  />
                 </Field>
               </div>
             </CollapsibleCard>

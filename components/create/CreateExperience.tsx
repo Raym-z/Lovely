@@ -16,13 +16,21 @@ import {
   RotateCcw,
   Sparkles,
 } from "lucide-react";
-import { lovelyContent, type LovelyContent } from "@/content/lovely";
+import {
+  lovelyContent,
+  type LovelyContent,
+  type SecretMessage,
+} from "@/content/lovely";
 import { cn } from "@/lib/cn";
 import { useHydrated } from "@/lib/use-hydrated";
 import {
   validateLovelyContent,
   type ValidationIssue,
 } from "@/lib/lovely-schema";
+import {
+  moveSecretMessage,
+  normalizeSecretMessages,
+} from "@/lib/secret-garden";
 import { LoadingScreen } from "@/components/lovely/LoadingScreen";
 import { HeartShape, Squiggle } from "@/components/lovely/Doodles";
 import { GhostButton, PrimaryButton, Sticker } from "@/components/lovely/ui";
@@ -103,6 +111,28 @@ function looksLikeLovelyContent(value: unknown): value is LovelyContent {
       Array.isArray(content.finalLetter.paragraphs) &&
       Array.isArray(content.finalLetter.thinkingNotes),
   );
+}
+
+function normalizeDraftContent(value: unknown): LovelyContent | null {
+  if (!looksLikeLovelyContent(value)) return null;
+
+  const messages = normalizeSecretMessages(value.secretMessages);
+  if (!Array.isArray(messages)) return null;
+
+  const validMessages = messages.every((message: unknown) => {
+    if (!message || typeof message !== "object") return false;
+    const secret = message as Partial<SecretMessage>;
+    return (
+      typeof secret.id === "string" &&
+      typeof secret.text === "string" &&
+      typeof secret.x === "number" &&
+      typeof secret.y === "number"
+    );
+  });
+
+  return validMessages
+    ? { ...value, secretMessages: messages as SecretMessage[] }
+    : null;
 }
 
 function StepNav({
@@ -240,7 +270,8 @@ export default function CreateExperience() {
       const raw = window.localStorage.getItem(DRAFT_KEY);
       if (raw) {
         const parsed: unknown = JSON.parse(raw);
-        if (looksLikeLovelyContent(parsed)) return parsed;
+        const draft = normalizeDraftContent(parsed);
+        if (draft) return draft;
       }
     } catch {
       // Ignore unreadable drafts.
@@ -1025,6 +1056,17 @@ export default function CreateExperience() {
               activeCouponId={previewCouponId}
               activeLetterSectionId={activeLetterSectionId}
               giftTab={giftTab}
+              onSecretPositionChange={(id, x, y) =>
+                setContent((previous) => ({
+                  ...previous,
+                  secretMessages: moveSecretMessage(
+                    previous.secretMessages,
+                    id,
+                    x,
+                    y,
+                  ),
+                }))
+              }
             />
           </aside>
         </div>
