@@ -56,7 +56,7 @@ export function ImageCropper({
   const [offset, setOffset] = useState<Point>({ x: 0, y: 0 });
   const [frame, setFrame] = useState<FrameSize>({ width: 0, height: 0 });
   const [exporting, setExporting] = useState(false);
-  const frameRef = useRef<HTMLDivElement | null>(null);
+  const viewportRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const decodedRef = useRef<DecodedImage | null>(null);
   const pointersRef = useRef(new Map<number, Point>());
@@ -102,16 +102,22 @@ export function ImageCropper({
   }, [file]);
 
   useEffect(() => {
-    const element = frameRef.current;
+    const element = viewportRef.current;
     if (!element) return;
 
     const observer = new ResizeObserver((entries) => {
       const entry = entries[0];
       if (!entry) return;
-      setFrame({
-        width: entry.contentRect.width,
-        height: entry.contentRect.height,
-      });
+
+      const maxWidth = Math.min(
+        entry.contentRect.width,
+        560,
+        entry.contentRect.height * MEMORY_PHOTO_ASPECT_RATIO,
+      );
+      const width = Math.max(0, Math.floor(maxWidth / 4) * 4);
+      const height = (width * 3) / 4;
+
+      setFrame({ width, height });
     });
 
     observer.observe(element);
@@ -366,7 +372,7 @@ export function ImageCropper({
   if (typeof document === "undefined") return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[90] flex items-center justify-center p-3 sm:p-6">
+    <div className="fixed inset-0 z-[90] flex items-center justify-center p-3 sm:p-4">
       <button
         type="button"
         aria-label="Close photo cropper"
@@ -379,17 +385,17 @@ export function ImageCropper({
         role="dialog"
         aria-modal="true"
         aria-labelledby="crop-dialog-title"
-        className="relative z-10 max-h-[94dvh] w-full max-w-2xl overflow-y-auto rounded-[1.8rem] border-2 border-white bg-cream p-3 shadow-[0_40px_100px_-40px_rgba(73,52,59,0.6)] sm:p-5"
+        className="relative z-10 flex h-[85dvh] max-h-[640px] w-full max-w-[760px] flex-col overflow-hidden rounded-[1.5rem] border-2 border-white bg-cream p-3 shadow-[0_40px_100px_-40px_rgba(73,52,59,0.6)] sm:p-4"
       >
-        <div className="flex items-start justify-between gap-3">
+        <div className="flex shrink-0 items-start justify-between gap-3">
           <div>
-            <p className="inline-flex items-center gap-1.5 rounded-full bg-pink-soft px-3 py-1 font-body text-[0.55rem] font-bold uppercase tracking-[0.14em] text-strawberry">
+            <p className="inline-flex items-center gap-1.5 rounded-full bg-pink-soft px-2.5 py-0.5 font-body text-[0.52rem] font-bold uppercase tracking-[0.14em] text-strawberry">
               <Crop className="h-3 w-3" />
               Photo crop
             </p>
             <h2
               id="crop-dialog-title"
-              className="mt-2 font-display text-xl font-semibold text-ink sm:text-2xl"
+              className="mt-1.5 font-display text-lg font-semibold text-ink sm:text-xl"
             >
               Frame your favorite part.
             </h2>
@@ -399,51 +405,59 @@ export function ImageCropper({
             onClick={onCancel}
             disabled={busy || exporting}
             aria-label="Close photo cropper"
-            className="grid h-9 w-9 shrink-0 place-items-center rounded-full border-2 border-white bg-white/85 text-ink-soft transition-colors hover:text-strawberry disabled:opacity-50"
+            className="grid h-8 w-8 shrink-0 place-items-center rounded-full border-2 border-white bg-white/85 text-ink-soft transition-colors hover:text-strawberry disabled:opacity-50"
           >
-            <X className="h-4 w-4" />
+            <X className="h-3.5 w-3.5" />
           </button>
         </div>
 
-        <p className="mt-1 font-body text-xs leading-relaxed text-ink-soft">
-          This is the exact shape of the polaroid photo. Drag to reposition,
-          pinch or use the slider to zoom.
+        <p className="mt-1 shrink-0 font-body text-[0.68rem] leading-relaxed text-ink-soft">
+          Exact polaroid shape. Drag to reposition, pinch or use the slider to
+          zoom.
         </p>
 
         <div
-          ref={frameRef}
-          onPointerDown={handlePointerDown}
-          onPointerMove={handlePointerMove}
-          onPointerUp={handlePointerEnd}
-          onPointerCancel={handlePointerEnd}
-          onWheel={(event) => {
-            event.preventDefault();
-            updateZoom(zoom * (event.deltaY < 0 ? 1.08 : 0.92));
-          }}
-          style={{ aspectRatio: MEMORY_PHOTO_ASPECT_RATIO }}
-          className="relative mt-4 w-full touch-none overflow-hidden rounded-2xl bg-ink/10 ring-1 ring-inset ring-white/60"
+          ref={viewportRef}
+          className="mt-2 flex min-h-0 flex-1 items-center justify-center overflow-hidden"
         >
-          <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" />
-          <span
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-x-0 top-1/3 border-t border-white/35"
-          />
-          <span
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-x-0 top-2/3 border-t border-white/35"
-          />
-          <span
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-y-0 left-1/3 border-l border-white/35"
-          />
-          <span
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-y-0 left-2/3 border-l border-white/35"
-          />
+          <div
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerEnd}
+            onPointerCancel={handlePointerEnd}
+            onWheel={(event) => {
+              event.preventDefault();
+              updateZoom(zoom * (event.deltaY < 0 ? 1.08 : 0.92));
+            }}
+            style={{
+              width: frame.width,
+              height: frame.height,
+              aspectRatio: MEMORY_PHOTO_ASPECT_RATIO,
+            }}
+            className="relative shrink-0 touch-none overflow-hidden rounded-xl bg-ink/10 ring-1 ring-inset ring-white/60"
+          >
+            <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" />
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-x-0 top-1/3 border-t border-white/35"
+            />
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-x-0 top-2/3 border-t border-white/35"
+            />
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-y-0 left-1/3 border-l border-white/35"
+            />
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-y-0 left-2/3 border-l border-white/35"
+            />
+          </div>
         </div>
 
-        <div className="mt-4 flex items-center gap-3">
-          <span className="font-body text-[0.58rem] font-bold uppercase tracking-[0.12em] text-ink-soft/65">
+        <div className="mt-2 flex shrink-0 items-center gap-2.5">
+          <span className="font-body text-[0.55rem] font-bold uppercase tracking-[0.12em] text-ink-soft/65">
             Zoom
           </span>
           <input
@@ -463,14 +477,14 @@ export function ImageCropper({
               setOffset({ x: 0, y: 0 });
             }}
             disabled={busy || exporting}
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-full border-2 border-ink/10 bg-white px-3 py-1.5 font-body text-[0.55rem] font-bold uppercase tracking-[0.1em] text-ink-soft transition-colors hover:border-pink hover:text-strawberry disabled:opacity-50"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-full border-2 border-ink/10 bg-white px-2.5 py-1 font-body text-[0.52rem] font-bold uppercase tracking-[0.1em] text-ink-soft transition-colors hover:border-pink hover:text-strawberry disabled:opacity-50"
           >
             <RotateCcw className="h-3 w-3" />
             Reset
           </button>
         </div>
 
-        <p className="mt-3 font-hand text-base leading-tight text-[#8f4557]/80">
+        <p className="mt-2 shrink-0 font-hand text-sm leading-tight text-[#8f4557]/80">
           The crop is saved into the photo itself, so every story using it sees
           exactly this frame.
         </p>
@@ -478,19 +492,19 @@ export function ImageCropper({
         {loadError || exportError || uploadError ? (
           <p
             role="alert"
-            className="mt-3 rounded-xl border-2 border-strawberry/25 bg-blush/70 px-3.5 py-2.5 font-body text-xs leading-relaxed text-[#7d4250]"
+            className="mt-2 shrink-0 rounded-xl border-2 border-strawberry/25 bg-blush/70 px-3 py-2 font-body text-xs leading-relaxed text-[#7d4250]"
           >
             {loadError ?? exportError ?? uploadError}
           </p>
         ) : null}
 
-        <div className="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        <div className="mt-3 flex shrink-0 flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <button
             type="button"
             onClick={onCancel}
             disabled={busy || exporting}
             className={cn(
-              "inline-flex items-center justify-center rounded-full border-2 border-ink/10 bg-white px-5 py-2.5 font-display text-sm font-semibold text-ink-soft transition-colors hover:border-pink hover:text-strawberry disabled:opacity-50",
+              "inline-flex items-center justify-center rounded-full border-2 border-ink/10 bg-white px-4 py-2 font-display text-sm font-semibold text-ink-soft transition-colors hover:border-pink hover:text-strawberry disabled:opacity-50",
             )}
           >
             Cancel
@@ -499,7 +513,7 @@ export function ImageCropper({
             type="button"
             onClick={confirmCrop}
             disabled={!decoded || Boolean(loadError) || busy || exporting}
-            className="inline-flex items-center justify-center gap-2 rounded-full bg-strawberry px-5 py-2.5 font-display text-sm font-semibold text-white shadow-button transition-colors hover:bg-[#f56a80] disabled:cursor-wait disabled:opacity-60"
+            className="inline-flex items-center justify-center gap-2 rounded-full bg-strawberry px-4 py-2 font-display text-sm font-semibold text-white shadow-button transition-colors hover:bg-[#f56a80] disabled:cursor-wait disabled:opacity-60"
           >
             {busy
               ? "Uploading..."
