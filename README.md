@@ -74,6 +74,22 @@ For existing deployments, run `supabase/migrations/20261106000000_account_owners
 
 If email confirmation is enabled, the account is upgraded after the user confirms their email and returns to `/signup?complete=1` to set the password. The guest session and page ownership are preserved throughout.
 
+## Photo uploads
+
+Each story can use an illustrated template or an uploaded photo. Photos are cropped in the browser to the polaroid's exact `4:3` image viewport, exported as WebP (JPEG fallback), compressed toward the 1 MB target, and only then uploaded. Original files are never stored. Uploaded assets can be reused across stories and owned pages without duplicate Storage objects.
+
+Owner sessions can reuse their personal photo library. Edit-key holders can upload and manage photos for that specific page, but cannot browse the owner's wider library. Photo writes are mediated by server routes using the service role only after validating the bearer token or the page edit key.
+
+Existing deployments must run the image migration in the Supabase SQL editor:
+
+1. Open `supabase/migrations/20261106010000_image_uploads.sql`.
+2. In the Supabase Dashboard, open **SQL Editor**, paste the migration, and run it.
+3. Verify `public.lovely_images` and `public.lovely_image_references` exist in **Table Editor**.
+4. Verify the public **Storage** bucket `lovely-images` exists.
+5. Verify RLS is enabled on both new tables and the bucket has only public read access, not public writes.
+
+The migration creates the tables, indexes, owner RLS policies, the public `lovely-images` bucket, and public-read Storage policy. No storage write policy is intentionally created; writes run server-side after owner/edit-key authorization. Unreferenced library images can be deleted explicitly; images still referenced by a page are protected from deletion.
+
 ## Scripts
 
 ```bash

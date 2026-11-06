@@ -1,8 +1,11 @@
 import Link from "next/link";
 import { decompressConfig } from "@/lib/compression";
+import { collectMemoryImageReferences } from "@/lib/image-references";
+import { getImagesByIds } from "@/lib/image-store";
 import { getPage, type StoredPage } from "@/lib/lovely-store";
 import { validateLovelyContent } from "@/lib/lovely-schema";
 import LovelyExperience from "./LovelyExperience";
+import type { MemoryPhotoImage } from "./MemoryPhoto";
 import { HeartShape, SparkleShape, Squiggle } from "./Doodles";
 
 function MessageScreen({
@@ -120,11 +123,36 @@ export async function SharedLovelyPage({
     );
   }
 
+  let imageMap: Record<string, MemoryPhotoImage> = {};
+
+  try {
+    const references = collectMemoryImageReferences(content.data);
+    if (references.length > 0) {
+      const images = await getImagesByIds(
+        references.map((reference) => reference.imageId),
+      );
+      imageMap = Object.fromEntries(
+        images.map((image) => [
+          image.id,
+          {
+            src: image.url,
+            width: image.width,
+            height: image.height,
+            alt: "A photo from this memory",
+          },
+        ]),
+      );
+    }
+  } catch (error) {
+    console.error("Failed to load Lovely photos", error);
+  }
+
   return (
     <LovelyExperience
       content={content.data}
       storageNamespace={`lovely.page.${uid}`}
       createHref="/create"
+      imageMap={imageMap}
     />
   );
 }

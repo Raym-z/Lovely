@@ -1,9 +1,13 @@
 import "server-only";
 
 import crypto from "node:crypto";
-import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, readdir, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import {
+  createClient,
+  type SupabaseClient,
+  type User,
+} from "@supabase/supabase-js";
 
 export type StorageMode = "supabase" | "file";
 
@@ -77,6 +81,10 @@ export function getStorageConfigIssue(): string | null {
   }
 
   return null;
+}
+
+export function getSupabaseAdminClient() {
+  return getSupabase();
 }
 
 function getSupabase() {
@@ -322,11 +330,44 @@ export async function updatePage(
   return { ok: true, storage: "file" };
 }
 
-export async function getAuthenticatedUserIdFromRequest(request: Request) {
+export async function verifyPageEditKey(uid: string, editKey: string) {
+  if (!isValidUid(uid) || !editKey) return null;
+  const page = await getPage(uid);
+  if (!page) return null;
+  return editKeyMatches(editKey, page.editKeyHash) ? page : null;
+}
+
+export async function deletePageRecord(uid: string) {
+  const supabase = getSupabase();
+
+  if (supabase) {
+    const { error } = await supabase.from(TABLE).delete().eq("id", uid);
+    if (error) throw new Error(error.message);
+    return;
+  }
+
+  try {
+    await unlink(filePath(uid));
+  } catch (error) {
+    if (
+      !(
+        error instanceof Error &&
+        "code" in error &&
+        (error as NodeJS.ErrnoException).code === "ENOENT"
+      )
+    ) {
+      throw error;
+    }
+  }
+}
+
+export function getBearerToken(request: Request) {
   const authorization = request.headers.get("authorization");
   if (!authorization?.startsWith("Bearer ")) return null;
+  return authorization.slice("Bearer ".length).trim() || null;
+}
 
-  const token = authorization.slice("Bearer ".length).trim();
+export async function getUserFromAccessToken(token: string) {
   if (!token) return null;
 
   const supabase = getSupabase();
@@ -335,10 +376,23 @@ export async function getAuthenticatedUserIdFromRequest(request: Request) {
   try {
     const { data, error } = await supabase.auth.getUser(token);
     if (error) return null;
-    return data.user?.id ?? null;
+    return data.user ?? null;
   } catch {
     return null;
   }
+}
+
+export async function getAuthenticatedUserFromRequest(
+  request: Request,
+): Promise<User | null> {
+  const token = getBearerToken(request);
+  if (!token) return null;
+  return getUserFromAccessToken(token);
+}
+
+export async function getAuthenticatedUserIdFromRequest(request: Request) {
+  const user = await getAuthenticatedUserFromRequest(request);
+  return user?.id ?? null;
 }
 
 export async function getPagesByOwner(

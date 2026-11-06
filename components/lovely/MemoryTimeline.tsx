@@ -7,14 +7,31 @@ import { cn } from "@/lib/cn";
 import type { LovelyContent, Memory } from "@/content/lovely";
 import { HeartShape } from "./Doodles";
 import { MemoryCard } from "./MemoryCard";
-import { MemoryPhoto } from "./MemoryPhoto";
+import { MemoryPhoto, type MemoryPhotoImage } from "./MemoryPhoto";
 import { JourneyFooter, SectionIntro, Sticker } from "./ui";
+
+function memoryImage(
+  memory: Memory,
+  imageMap: Record<string, MemoryPhotoImage>,
+) {
+  if (
+    memory.photoSource === "upload" &&
+    memory.photoImageId &&
+    imageMap[memory.photoImageId]
+  ) {
+    return imageMap[memory.photoImageId];
+  }
+
+  return null;
+}
 
 function MemoryDetail({
   memory,
+  image,
   onClose,
 }: {
   memory: Memory;
+  image?: MemoryPhotoImage | null;
   onClose: () => void;
 }) {
   return (
@@ -51,7 +68,7 @@ function MemoryDetail({
         </button>
 
         <div className="rounded-[1.5rem] bg-paper p-4 sm:p-6">
-          <MemoryPhoto variant={memory.photo} />
+          <MemoryPhoto variant={memory.photo} image={image} />
 
           <div className="mt-5 flex items-center justify-between gap-3">
             <p className="font-body text-[0.63rem] font-bold uppercase tracking-[0.16em] text-ink-soft/65">
@@ -101,10 +118,12 @@ function MemoryDetail({
 
 export function MemoryTimeline({
   content,
+  imageMap = {},
   onContinue,
   onBack,
 }: {
   content: LovelyContent;
+  imageMap?: Record<string, MemoryPhotoImage>;
   onContinue: () => void;
   onBack: () => void;
 }) {
@@ -173,6 +192,7 @@ export function MemoryTimeline({
                 <MemoryCard
                   memory={memory}
                   index={index}
+                  image={memoryImage(memory, imageMap)}
                   onOpen={() => setSelected(memory)}
                 />
               </div>
@@ -203,7 +223,11 @@ export function MemoryTimeline({
 
       <AnimatePresence>
         {selected ? (
-          <MemoryDetail memory={selected} onClose={() => setSelected(null)} />
+          <MemoryDetail
+            memory={selected}
+            image={memoryImage(selected, imageMap)}
+            onClose={() => setSelected(null)}
+          />
         ) : null}
       </AnimatePresence>
     </section>

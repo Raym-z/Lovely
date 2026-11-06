@@ -2,10 +2,13 @@ import { NextResponse } from "next/server";
 import { compressConfig } from "@/lib/compression";
 import {
   createPage,
+  deletePageRecord,
   getAuthenticatedUserIdFromRequest,
   getStorageConfigIssue,
   getStorageMode,
 } from "@/lib/lovely-store";
+import { collectMemoryImageReferences } from "@/lib/image-references";
+import { syncPageImageReferences } from "@/lib/image-store";
 import {
   MAX_COMPRESSED_LENGTH,
   MAX_CONTENT_BYTES,
@@ -67,6 +70,17 @@ export async function POST(request: Request) {
   try {
     const ownerId = await getAuthenticatedUserIdFromRequest(request);
     const created = await createPage(compressed, ownerId);
+    const references = collectMemoryImageReferences(parsed.data);
+
+    try {
+      if (references.length > 0) {
+        await syncPageImageReferences(created.uid, ownerId, references);
+      }
+    } catch (referenceError) {
+      await deletePageRecord(created.uid).catch(() => undefined);
+      throw referenceError;
+    }
+
     return NextResponse.json(
       {
         uid: created.uid,

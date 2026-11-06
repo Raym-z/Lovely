@@ -7,6 +7,11 @@ import {
   getStorageMode,
   updatePage,
 } from "@/lib/lovely-store";
+import { collectMemoryImageReferences } from "@/lib/image-references";
+import {
+  claimPageImages,
+  syncPageImageReferences,
+} from "@/lib/image-store";
 import {
   MAX_COMPRESSED_LENGTH,
   MAX_CONTENT_BYTES,
@@ -139,6 +144,34 @@ export async function PUT(request: Request, context: RouteContext) {
         { error: "That edit key does not match this Lovely." },
         { status: 403 },
       );
+    }
+
+    const references = collectMemoryImageReferences(parsed.data);
+    if (references.length > 0) {
+      const storedPage = await getPage(uid);
+      if (!storedPage) {
+        return NextResponse.json(
+          { error: "This Lovely could not be found." },
+          { status: 404 },
+        );
+      }
+
+      await syncPageImageReferences(
+        uid,
+        storedPage.ownerId,
+        references,
+      );
+      if (storedPage.ownerId) {
+        await claimPageImages(uid, storedPage.ownerId);
+      }
+    } else {
+      const storedPage = await getPage(uid);
+      if (storedPage) {
+        await syncPageImageReferences(uid, storedPage.ownerId, []);
+        if (storedPage.ownerId) {
+          await claimPageImages(uid, storedPage.ownerId);
+        }
+      }
     }
 
     return NextResponse.json({ ok: true, storage: result.storage });

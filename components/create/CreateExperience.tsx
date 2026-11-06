@@ -27,6 +27,7 @@ import {
   validateLovelyContent,
   type ValidationIssue,
 } from "@/lib/lovely-schema";
+import type { LovelyImage } from "@/lib/image-types";
 import {
   moveSecretMessage,
   normalizeSecretMessages,
@@ -261,6 +262,8 @@ export default function CreateExperience() {
   }, [authToken]);
 
   const [ownsPage, setOwnsPage] = useState(false);
+  const [images, setImages] = useState<LovelyImage[] | null>(null);
+  const [imageRefreshKey, setImageRefreshKey] = useState(0);
   const [editUid, setEditUid] = useState<string | null>(() => {
     if (typeof window === "undefined") return null;
     const value = new URLSearchParams(window.location.search).get("edit");
@@ -432,6 +435,45 @@ export default function CreateExperience() {
       cancelled = true;
     };
   }, [editUid, guestStatus, hydrated]);
+
+  useEffect(() => {
+    if (!hydrated || guestStatus === "loading") return;
+    if (!authToken && !editKey) return;
+
+    let cancelled = false;
+    const params = new URLSearchParams();
+    if (editUid) params.set("pageId", editUid);
+    if (editKey) params.set("editKey", editKey);
+    const query = params.toString();
+
+    fetch(`/api/images${query ? `?${query}` : ""}`, {
+      cache: "no-store",
+      headers: authToken
+        ? { Authorization: `Bearer ${authToken}` }
+        : undefined,
+    })
+      .then(async (response) => {
+        const data = (await response.json().catch(() => ({}))) as {
+          images?: LovelyImage[];
+        };
+        if (!response.ok) throw new Error("Could not load photos.");
+        if (!cancelled) setImages(data.images ?? []);
+      })
+      .catch(() => {
+        if (!cancelled) setImages([]);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    authToken,
+    editKey,
+    editUid,
+    guestStatus,
+    hydrated,
+    imageRefreshKey,
+  ]);
 
   useEffect(() => {
     if (!hydrated || editUid || loadState !== "ready") return;
@@ -662,11 +704,29 @@ export default function CreateExperience() {
     window.history.replaceState(null, "", `/create?edit=${saved.uid}`);
   }
 
+  function handleImageCreated(image: LovelyImage) {
+    setImages((previous) => [
+      image,
+      ...(previous ?? []).filter((item) => item.id !== image.id),
+    ]);
+  }
+
+  function handleImageRemoved(imageId: string) {
+    setImages((previous) =>
+      (previous ?? []).filter((image) => image.id !== imageId),
+    );
+  }
+
+  function refreshImages() {
+    setImageRefreshKey((current) => current + 1);
+  }
+
   function startAnother() {
     setSaved(null);
     setEditUid(null);
     setEditKey("");
     setOwnsPage(false);
+    setImages(null);
     setLoadState("ready");
     setContent(createStarterContent());
     setStep("basics");
@@ -1125,6 +1185,12 @@ export default function CreateExperience() {
                 setContent={setContent}
                 activeMemoryId={activeMemoryId}
                 onActiveMemoryChange={handleActiveMemoryChange}
+                pageId={editUid}
+                editKey={editKey}
+                images={images}
+                onImageCreated={handleImageCreated}
+                onImageRemoved={handleImageRemoved}
+                onImagesRefresh={refreshImages}
               />
             ) : null}
             {step === "quiz" ? (
@@ -1168,6 +1234,7 @@ export default function CreateExperience() {
               activeCouponId={previewCouponId}
               activeLetterSectionId={activeLetterSectionId}
               giftTab={giftTab}
+              images={images ?? []}
               onSecretPositionChange={(id, x, y) =>
                 setContent((previous) => ({
                   ...previous,
@@ -1229,3 +1296,4 @@ export default function CreateExperience() {
     </div>
   );
 }
+

@@ -8,6 +8,7 @@ import { ArrowRight, Heart, Maximize2, Quote, Sparkles, X } from "lucide-react";
 import { defaultEmergencyNote } from "@/content/lovely";
 import type { Coupon, LovelyContent, Memory } from "@/content/lovely";
 import { accentPaletteMap } from "@/lib/accent-palette";
+import type { LovelyImage } from "@/lib/image-types";
 import type { GiftTab } from "./steps/GiftsStep";
 import {
   getLetterSection,
@@ -133,15 +134,29 @@ function MemoryPreviewCard({
   memory,
   index,
   expanded,
+  image,
 }: {
   memory: Memory;
   index: number;
   expanded: boolean;
+  image?: LovelyImage;
 }) {
   return (
     <div className="rounded-[1.25rem] bg-white p-2.5 shadow-card">
       <div className="relative">
-        <MemoryPhoto variant={memory.photo} />
+        <MemoryPhoto
+          variant={memory.photo}
+          image={
+            image
+              ? {
+                  src: image.url,
+                  width: image.width,
+                  height: image.height,
+                  alt: "A photo from this memory",
+                }
+              : null
+          }
+        />
         <span
           className={cn(
             "absolute -bottom-2.5 -right-2.5 z-10 grid h-8 w-8 rotate-6 place-items-center rounded-full border-2 border-white font-hand text-[0.55rem] font-bold",
@@ -219,9 +234,11 @@ function MemoryPreviewCard({
 function StoryPreview({
   content,
   activeMemoryId,
+  images,
 }: {
   content: LovelyContent;
   activeMemoryId: string | null;
+  images: LovelyImage[];
 }) {
   const [expanded, setExpanded] = useState(false);
   const activeIndex = content.memories.findIndex(
@@ -256,7 +273,16 @@ function StoryPreview({
         onFocus={() => setExpanded(true)}
         onBlur={() => setExpanded(false)}
       >
-        <MemoryPreviewCard memory={memory} index={index} expanded={expanded} />
+        <MemoryPreviewCard
+          memory={memory}
+          index={index}
+          expanded={expanded}
+          image={
+            memory.photoSource === "upload" && memory.photoImageId
+              ? images.find((image) => image.id === memory.photoImageId)
+              : undefined
+          }
+        />
         <p className="mt-2 text-center font-body text-[0.45rem] font-bold uppercase tracking-[0.14em] text-strawberry-deep/70">
           {expanded ? "move away to close" : "hover to open this memory"}
         </p>
@@ -1178,6 +1204,7 @@ export function LivePreview({
   activeCouponId,
   activeLetterSectionId,
   giftTab,
+  images,
   onSecretPositionChange,
 }: {
   content: LovelyContent;
@@ -1187,6 +1214,7 @@ export function LivePreview({
   activeCouponId: string | null;
   activeLetterSectionId: LetterSectionId;
   giftTab: GiftTab;
+  images: LovelyImage[];
   onSecretPositionChange: (id: string, x: number, y: number) => void;
 }) {
   const meta = stepMeta[step];
@@ -1230,6 +1258,7 @@ export function LivePreview({
             <StoryPreview
               content={content}
               activeMemoryId={activeMemoryId}
+              images={images}
             />
           ) : step === "quiz" ? (
             <QuizPreview

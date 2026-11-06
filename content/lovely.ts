@@ -30,6 +30,8 @@ export type Accent =
   | "coral"
   | "powder-blue";
 
+export type MemoryPhotoSource = "template" | "upload";
+
 export interface Memory {
   id: string;
   date: string;
@@ -38,6 +40,8 @@ export interface Memory {
   caption: string;
   detail: string;
   photo: PhotoVariant;
+  photoSource?: MemoryPhotoSource;
+  photoImageId?: string | null;
   accent: Accent;
 }
 

@@ -2,7 +2,7 @@
 
 import type { Dispatch, SetStateAction } from "react";
 import type { LovelyContent, Memory } from "@/content/lovely";
-import { MemoryPhoto } from "@/components/lovely/MemoryPhoto";
+import type { LovelyImage } from "@/lib/image-types";
 import { makeId } from "@/lib/ids";
 import {
   AddButton,
@@ -13,27 +13,31 @@ import {
   TextArea,
   TextInput,
 } from "../fields";
-import { accentOptions, photoOptions } from "../options";
-
-const scenePickerOptions = photoOptions.map((option) => ({
-  ...option,
-  preview: (
-    <span className="h-10 w-14 shrink-0 overflow-hidden rounded-lg shadow-sm ring-1 ring-ink/5">
-      <MemoryPhoto variant={option.value} className="h-full w-full rounded-lg" />
-    </span>
-  ),
-}));
+import { MemoryPhotoField } from "../MemoryPhotoField";
+import { accentOptions } from "../options";
 
 export function StoryStep({
   content,
   setContent,
   activeMemoryId,
   onActiveMemoryChange,
+  pageId,
+  editKey,
+  images,
+  onImageCreated,
+  onImageRemoved,
+  onImagesRefresh,
 }: {
   content: LovelyContent;
   setContent: Dispatch<SetStateAction<LovelyContent>>;
   activeMemoryId: string | null;
   onActiveMemoryChange: (id: string | null) => void;
+  pageId: string | null;
+  editKey: string;
+  images: LovelyImage[] | null;
+  onImageCreated: (image: LovelyImage) => void;
+  onImageRemoved: (imageId: string) => void;
+  onImagesRefresh: () => void;
 }) {
   function updateMemory(index: number, patch: Partial<Memory>) {
     setContent((previous) => ({
@@ -87,7 +91,7 @@ export function StoryStep({
     <div className="space-y-5">
       <EditorCard
         title="Your little story"
-        description="Memories appear as polaroids on a timeline. The illustrated scenes are placeholders — choose the one that feels closest, then make the words yours."
+        description="Memories appear as polaroids on a timeline. Choose an illustrated scene or upload your own photo, then make the words yours."
         accent="lavender"
       >
         <div className="space-y-3">
@@ -167,14 +171,24 @@ export function StoryStep({
                 />
               </Field>
               <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="Photo scene" required>
-                  <OptionPicker
-                    value={memory.photo}
-                    onChange={(photo) => updateMemory(index, { photo })}
-                    options={scenePickerOptions}
-                    label="Photo scene"
+                <div className="sm:col-span-2">
+                  <MemoryPhotoField
+                    memory={memory}
+                    pageId={pageId}
+                    editKey={editKey}
+                    images={images}
+                    usedImageIds={content.memories
+                      .filter(
+                        (item) =>
+                          item.photoSource === "upload" && item.photoImageId,
+                      )
+                      .map((item) => item.photoImageId as string)}
+                    onPatch={(patch) => updateMemory(index, patch)}
+                    onImageCreated={onImageCreated}
+                    onImageRemoved={onImageRemoved}
+                    onImagesRefresh={onImagesRefresh}
                   />
-                </Field>
+                </div>
                 <Field label="Sticker color" required>
                   <OptionPicker
                     value={memory.accent}

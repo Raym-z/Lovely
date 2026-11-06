@@ -46,6 +46,8 @@ const memorySchema = z.object({
   caption: requiredText(1200),
   detail: requiredText(1200),
   photo: photoVariantSchema,
+  photoSource: z.enum(["template", "upload"]).optional(),
+  photoImageId: z.string().uuid().nullable().optional(),
   accent: accentSchema,
 });
 

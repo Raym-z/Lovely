@@ -595,14 +595,46 @@ const scenes: Record<PhotoVariant, { background: string; content: ReactNode }> =
   },
 };
 
+export type MemoryPhotoImage = {
+  src: string;
+  width: number;
+  height: number;
+  alt?: string;
+};
+
 export function MemoryPhoto({
   variant,
+  image,
   className,
 }: {
   variant: PhotoVariant;
+  image?: MemoryPhotoImage | null;
   className?: string;
 }) {
   const scene = scenes[variant];
+
+  if (image?.src) {
+    return (
+      <div
+        className={cn(
+          "relative aspect-[4/3] w-full overflow-hidden rounded-[1.05rem] bg-[#F3E5DC]",
+          className,
+        )}
+      >
+        <img
+          src={image.src}
+          alt={image.alt ?? "A photo from this memory"}
+          width={image.width}
+          height={image.height}
+          loading="lazy"
+          decoding="async"
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+        <div className="pointer-events-none absolute inset-0 ring-1 ring-inset ring-white/30" />
+        <HeartShape className="absolute right-3 top-3 h-4 w-4 text-white/70 drop-shadow-sm" />
+      </div>
+    );
+  }
 
   return (
     <div

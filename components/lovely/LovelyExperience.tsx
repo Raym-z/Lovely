@@ -12,6 +12,7 @@ import { FloatingHearts } from "./FloatingHearts";
 import { HeartShape, Squiggle } from "./Doodles";
 import { ProgressIndicator } from "./ProgressIndicator";
 import { Invitation } from "./Invitation";
+import type { MemoryPhotoImage } from "./MemoryPhoto";
 import { MemoryTimeline } from "./MemoryTimeline";
 import { CoupleQuiz } from "./CoupleQuiz";
 import { LittleGifts } from "./LittleGifts";
@@ -75,11 +76,13 @@ export default function LovelyExperience({
   storageNamespace = "lovely.demo",
   personalizeHref,
   createHref,
+  imageMap = {},
 }: {
   content: LovelyContent;
   storageNamespace?: string;
   personalizeHref?: string;
   createHref?: string;
+  imageMap?: Record<string, MemoryPhotoImage>;
 }) {
   const [journey, setJourney] = usePersistentState<JourneyState>(
     `${storageNamespace}.journey.v1`,
@@ -190,6 +193,7 @@ export default function LovelyExperience({
               {section === 1 ? (
                 <MemoryTimeline
                   content={content}
+                  imageMap={imageMap}
                   onContinue={() => goTo(2)}
                   onBack={() => goTo(0)}
                 />
