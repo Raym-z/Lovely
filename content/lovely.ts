@@ -37,7 +37,7 @@ export interface Memory {
   date: string;
   title: string;
   excerpt: string;
-  caption: string;
+  caption?: string;
   detail: string;
   photo: PhotoVariant;
   photoSource?: MemoryPhotoSource;

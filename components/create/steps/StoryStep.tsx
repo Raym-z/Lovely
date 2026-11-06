@@ -74,8 +74,6 @@ export function StoryStep({
             date: "A day to remember",
             title: "A new little memory",
             excerpt: "Replace this with something only the two of you know.",
-            caption:
-              "Tell the story here: where you were, what was said, and why it stayed with you.",
             detail:
               "Add the tiny detail you never want to forget — the song, the weather, the look on their face.",
             photo: "cafe",
@@ -140,20 +138,6 @@ export function StoryStep({
                     updateMemory(index, { excerpt: event.target.value })
                   }
                   maxLength={240}
-                />
-              </Field>
-              <Field
-                label="The full memory"
-                hint="Shown when they tap the polaroid."
-                required
-              >
-                <TextArea
-                  rows={3}
-                  value={memory.caption}
-                  onChange={(event) =>
-                    updateMemory(index, { caption: event.target.value })
-                  }
-                  maxLength={1200}
                 />
               </Field>
               <Field

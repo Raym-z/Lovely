@@ -177,12 +177,7 @@ function MemoryPreviewCard({
           </span>
         </div>
 
-        <p
-          className={cn(
-            "mt-1.5 font-display font-semibold leading-tight text-ink",
-            expanded ? "text-lg" : "text-base",
-          )}
-        >
+        <p className="mt-1.5 font-display text-base font-semibold leading-tight text-ink">
           {memory.title || "A memory"}
         </p>
         <p className="mt-1 line-clamp-2 font-hand text-[0.95rem] leading-snug text-strawberry">
@@ -191,9 +186,6 @@ function MemoryPreviewCard({
 
         {expanded ? (
           <>
-            <p className="mt-2 line-clamp-4 font-body text-[0.62rem] leading-relaxed text-ink-soft">
-              {memory.caption || "The full memory goes here."}
-            </p>
             <div className="relative mt-2 rounded-xl border-2 border-dashed border-pink bg-blush/60 p-2.5">
               <HeartShape className="absolute -right-1.5 -top-1.5 h-4 w-4 rotate-12 text-pink" />
               <p className="line-clamp-3 font-hand text-[0.85rem] leading-snug text-[#8f4557]">

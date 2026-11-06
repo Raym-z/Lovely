@@ -43,7 +43,7 @@ const memorySchema = z.object({
   date: requiredText(80),
   title: requiredText(120),
   excerpt: requiredText(240),
-  caption: requiredText(1200),
+  caption: z.string().max(1200).optional(),
   detail: requiredText(1200),
   photo: photoVariantSchema,
   photoSource: z.enum(["template", "upload"]).optional(),

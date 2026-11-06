@@ -20,13 +20,13 @@ function memoryImage(memory: Memory, imageMap: Record<string, MemoryPhotoImage>)
 
 function MemoryDetail({ memory, image, onClose }: { memory: Memory; image?: MemoryPhotoImage | null; onClose: () => void }) {
 	return (
-		<motion.div className='fixed inset-0 z-[60] flex items-center justify-center p-3 sm:p-6' initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.25 }}>
+		<motion.div className='fixed inset-0 z-[60] flex items-center justify-center p-3 sm:p-4' initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.25 }}>
 			<motion.div className='absolute inset-0 bg-ink/45 backdrop-blur-sm' onClick={onClose} aria-hidden='true' />
 			<motion.div
 				role='dialog'
 				aria-modal='true'
 				aria-labelledby='memory-dialog-title'
-				className='no-scrollbar relative z-10 max-h-[89dvh] w-full max-w-xl overflow-y-auto rounded-[2rem] border-2 border-white bg-cream p-3 shadow-[0_40px_100px_-40px_rgba(73,52,59,0.6)]'
+				className='no-scrollbar relative z-10 max-h-[85dvh] w-full max-w-[22rem] overflow-y-auto rounded-[1.4rem] border-2 border-white bg-cream p-2 shadow-[0_40px_100px_-40px_rgba(73,52,59,0.6)] sm:p-2.5'
 				initial={{ opacity: 0, scale: 0.94, y: 26 }}
 				animate={{ opacity: 1, scale: 1, y: 0 }}
 				exit={{ opacity: 0, scale: 0.96, y: 16 }}
@@ -37,38 +37,40 @@ function MemoryDetail({ memory, image, onClose }: { memory: Memory; image?: Memo
 					onClick={onClose}
 					autoFocus
 					aria-label='Close memory'
-					className='absolute right-5 top-5 z-20 grid h-10 w-10 place-items-center rounded-full border-2 border-white bg-white/90 text-ink-soft shadow-md transition-colors hover:text-strawberry'
+					className='absolute right-2.5 top-2.5 z-20 grid h-7 w-7 place-items-center rounded-full border-2 border-white bg-white/90 text-ink-soft shadow-md transition-colors hover:text-strawberry'
 				>
-					<X className='h-4 w-4' />
+					<X className='h-3 w-3' />
 				</button>
 
-				<div className='rounded-[1.5rem] bg-paper p-4 sm:p-6'>
+				<div className='rounded-[1.15rem] bg-paper p-2.5 sm:p-3'>
 					<MemoryPhoto variant={memory.photo} image={image} />
 
-					<div className='mt-5 flex items-center justify-between gap-3'>
-						<p className='font-body text-[0.63rem] font-bold uppercase tracking-[0.16em] text-ink-soft/65'>{memory.date}</p>
-						<Sticker tone={memory.accent}>
+					<div className='mt-2.5 flex items-center justify-between gap-2'>
+						<p className='font-body text-[0.55rem] font-bold uppercase tracking-[0.16em] text-ink-soft/65'>{memory.date}</p>
+						<Sticker tone={memory.accent} className='scale-[0.85]'>
 							<Heart className='h-3 w-3' strokeWidth={2.5} />a good one
 						</Sticker>
 					</div>
 
-					<h3 id='memory-dialog-title' className='mt-2 font-display text-[1.9rem] font-semibold leading-tight text-ink sm:text-4xl'>
+					<h3 id='memory-dialog-title' className='mt-1 font-display text-xl font-semibold leading-tight text-ink sm:text-2xl'>
 						{memory.title}
 					</h3>
 
-					<p className='mt-3 text-pretty font-body text-[0.93rem] leading-relaxed text-ink-soft sm:text-base'>{memory.caption}</p>
+					<p className='mt-1.5 text-pretty font-hand text-base leading-snug text-strawberry sm:text-lg'>
+						{memory.excerpt}
+					</p>
 
-					<div className='relative mt-5 rounded-2xl border-2 border-dashed border-pink bg-blush/60 p-4 sm:p-5'>
-						<HeartShape className='absolute -right-2 -top-2 h-6 w-6 rotate-12 text-pink' />
-						<p className='font-hand text-xl leading-snug text-[#8f4557] sm:text-[1.4rem]'>{memory.detail}</p>
+					<div className='relative mt-2.5 rounded-lg border-2 border-dashed border-pink bg-blush/60 p-2.5 sm:p-3'>
+						<HeartShape className='absolute -right-2 -top-2 h-4 w-4 rotate-12 text-pink' />
+						<p className='font-hand text-base leading-snug text-[#8f4557] sm:text-lg'>{memory.detail}</p>
 					</div>
 
-					<div className='mt-5 flex items-center justify-between gap-3'>
-						<p className='font-hand text-lg text-strawberry'>the little details matter most</p>
+					<div className='mt-2.5 flex items-center justify-between gap-2'>
+						<p className='font-hand text-sm text-strawberry'>the little details matter most</p>
 						<button
 							type='button'
 							onClick={onClose}
-							className='rounded-full border-2 border-ink/10 bg-white px-4 py-2 font-body text-xs font-bold uppercase tracking-widest text-ink-soft transition-colors hover:border-pink hover:text-strawberry'
+							className='rounded-full border-2 border-ink/10 bg-white px-2.5 py-1 font-body text-[0.55rem] font-bold uppercase tracking-widest text-ink-soft transition-colors hover:border-pink hover:text-strawberry'
 						>
 							Close
 						</button>
