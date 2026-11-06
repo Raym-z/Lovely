@@ -157,7 +157,7 @@ export function JourneyFooter({ onBack, onContinue, nextLabel, note, backLabel =
 				<HeartShape className='h-3.5 w-3.5' />
 				<span className='h-px w-10 bg-current opacity-50' />
 			</div>
-			<div className='flex w-full flex-col-reverse items-center justify-center gap-3 sm:w-auto sm:flex-row'>
+			<div className='flex w-full flex-row items-center justify-center gap-2 sm:w-auto sm:gap-3'>
 				{onBack ? <GhostButton onClick={onBack}>{backLabel}</GhostButton> : null}
 				{onContinue && nextLabel ? (
 					<GhostButton

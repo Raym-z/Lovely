@@ -258,7 +258,13 @@ export function FinalLetter({ content, onRestart, storageNamespace }: { content:
 							<p className='mt-2 font-hand text-lg text-ink-soft/75'>no wrong answers. (there is one right answer.)</p>
 
 							<div className='mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row'>
-								<PrimaryButton onClick={accept}> {finalLetter.yesLabel}</PrimaryButton>
+								<GhostButton
+									onClick={accept}
+									icon={false}
+									tone='strawberry'
+								>
+									{finalLetter.yesLabel}
+								</GhostButton>
 								<motion.button
 									type='button'
 									onClick={handleThink}

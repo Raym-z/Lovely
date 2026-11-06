@@ -1004,7 +1004,7 @@ function QuestionLetterPreview({ content }: { content: LovelyContent }) {
       </p>
 
       <div className="mt-3 flex flex-wrap items-center justify-center gap-1.5">
-        <span className="inline-flex items-center gap-1 rounded-full bg-strawberry px-3 py-1.5 font-display text-[0.62rem] font-semibold text-white shadow-[0_2px_0_#d94360]">
+        <span className="inline-flex items-center gap-1 rounded-full border-2 border-strawberry bg-strawberry px-3 py-1.5 font-display text-[0.62rem] font-semibold text-white">
           {finalLetter.yesLabel || "Of course! ❤️"}
         </span>
         <span className="inline-flex rounded-full border-2 border-ink/10 bg-white px-3 py-1.5 font-display text-[0.62rem] font-semibold text-ink-soft">
