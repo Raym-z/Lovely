@@ -137,12 +137,14 @@ function CouponTicket({
 export function LoveCoupons({
   coupons,
   className,
+  storageNamespace,
 }: {
   coupons: Coupon[];
   className?: string;
+  storageNamespace: string;
 }) {
   const [redeemed, setRedeemed] = usePersistentState<Record<string, boolean>>(
-    "lovely.coupons.v1",
+    `${storageNamespace}.coupons.v1`,
     {},
   );
 

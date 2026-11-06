@@ -40,12 +40,14 @@ function getPosition(index: number) {
 export function SecretMessages({
   messages,
   className,
+  storageNamespace,
 }: {
   messages: string[];
   className?: string;
+  storageNamespace: string;
 }) {
   const [opened, setOpened] = usePersistentState<number[]>(
-    "lovely.secrets.v1",
+    `${storageNamespace}.secrets.v1`,
     [],
   );
   const [active, setActive] = useState<number | null>(null);

@@ -1,36 +1,62 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Lovely
 
-## Getting Started
+A little website, a lot of love.
 
-First, run the development server:
+Lovely is an interactive Valentine's experience: a floating envelope, a scrapbook timeline, a playful quiz, little gifts, and one very important question. It also includes a creator that turns your own version into a short shareable link.
+
+## Routes
+
+| Route | What it does |
+| --- | --- |
+| `/` | The demo experience |
+| `/create` | The creator / editor |
+| `/[uid]` | A saved, shareable Lovely |
+| `/create?edit=UID` | Edit a saved Lovely (needs its edit key) |
+
+## Getting started
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Storage
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+The creator works without any setup by falling back to local JSON files in `.data/lovely/`. That is useful for development, but it is **not reliable on serverless hosts** such as Vercel.
 
-## Learn More
+For real share links, create a free Supabase project and:
 
-To learn more about Next.js, take a look at the following resources:
+1. Run [`supabase/schema.sql`](supabase/schema.sql) in the Supabase SQL editor.
+2. Copy `.env.example` to `.env.local` and fill in:
+   - `SUPABASE_URL`
+   - `SUPABASE_SECRET_KEY` (preferred) or the legacy `SUPABASE_SERVICE_ROLE_KEY`
+   - `NEXT_PUBLIC_SHARE_ORIGIN` (optional; leave empty locally)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+The secret/service-role key is only used in server code. Do **not** use the publishable or anon key here — RLS is enabled and the app will show a setup error. Pages are stored as `UID -> compressed config`; the table has no public policies.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+For localhost, leave `NEXT_PUBLIC_SHARE_ORIGIN` empty so the creator uses whatever origin the browser is currently on (including non-default ports).
 
-## Deploy on Vercel
+## Sharing / subdomain
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Point `lovely.raymondwillytan.com` at the deployment and set:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+NEXT_PUBLIC_SHARE_ORIGIN=https://lovely.raymondwillytan.com
+```
+
+Share links will then look like `https://lovely.raymondwillytan.com/abc123xy`.
+
+## Editing
+
+The edit key is saved in the creator's browser for convenience and is also shown once on the success screen as a recovery key. Anyone with the share link can view the page; only someone with the edit key can update it.
+
+## Scripts
+
+```bash
+npm run dev     # development
+npm run build   # production build
+npm run start   # start the production build
+npm run lint    # eslint
+```

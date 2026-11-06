@@ -2,7 +2,13 @@ import { Sparkles } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { HeartShape, StarShape } from "../Doodles";
 
-export function EmergencyNote({ className }: { className?: string }) {
+export function EmergencyNote({
+  note,
+  className,
+}: {
+  note: string;
+  className?: string;
+}) {
   return (
     <div
       className={cn(
@@ -31,9 +37,7 @@ export function EmergencyNote({ className }: { className?: string }) {
 
       <div className="mt-4 flex flex-1 items-center rounded-2xl border-2 border-dashed border-[#e7cf8c] bg-white/55 p-4">
         <p className="font-hand text-[1.3rem] leading-snug text-[#7a5a1f]">
-          If you&apos;re having a hard day, come back to this page. You are
-          loved on the good days, the quiet days, and the days you don&apos;t
-          feel like yourself. Especially those.
+          {note}
         </p>
       </div>
 

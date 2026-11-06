@@ -82,8 +82,12 @@ export interface LovelyContent {
   compliments: string[];
   reasons: string[];
   secretMessages: string[];
+  emergencyNote: string;
   finalLetter: FinalLetter;
 }
+
+export const defaultEmergencyNote =
+  "If you're having a hard day, come back to this page. You are loved on the good days, the quiet days, and the days you don't feel like yourself. Especially those.";
 
 export const lovelyContent: LovelyContent = {
   sender: "Alex",
@@ -318,6 +322,7 @@ export const lovelyContent: LovelyContent = {
     "I have a note on my phone titled 'things to tell Mia' and it is embarrassingly long.",
     "Every time a song we like comes on, I turn it up a little for you.",
   ],
+  emergencyNote: defaultEmergencyNote,
   finalLetter: {
     eyebrow: "One last thing",
     title: "There's just one more thing...",
@@ -332,7 +337,7 @@ export const lovelyContent: LovelyContent = {
       "So here's my very simple question.",
     ],
     signature: "With all my love, always,",
-    signatureName: "Alex",
+    signatureName: "",
     postscript:
       "P.S. You're my favorite person. This is not up for debate.",
     question: "Will you be my Valentine?",

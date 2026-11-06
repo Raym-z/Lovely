@@ -12,10 +12,12 @@ export function LittleGifts({
   content,
   onContinue,
   onBack,
+  storageNamespace,
 }: {
   content: LovelyContent;
   onContinue: () => void;
   onBack: () => void;
+  storageNamespace: string;
 }) {
   return (
     <section>
@@ -32,13 +34,24 @@ export function LittleGifts({
       />
 
       <div className="mt-10 grid gap-4 sm:gap-5 lg:grid-cols-2">
-        <LoveCoupons coupons={content.coupons} className="lg:col-span-2" />
+        <LoveCoupons
+          coupons={content.coupons}
+          className="lg:col-span-2"
+          storageNamespace={storageNamespace}
+        />
         <div className="flex flex-col gap-4 sm:gap-5">
           <ComplimentGenerator compliments={content.compliments} />
-          <EmergencyNote className="flex-1" />
+          <EmergencyNote note={content.emergencyNote} className="flex-1" />
         </div>
-        <ReasonCards reasons={content.reasons} />
-        <SecretMessages messages={content.secretMessages} className="lg:col-span-2" />
+        <ReasonCards
+          reasons={content.reasons}
+          storageNamespace={storageNamespace}
+        />
+        <SecretMessages
+          messages={content.secretMessages}
+          className="lg:col-span-2"
+          storageNamespace={storageNamespace}
+        />
       </div>
 
       <JourneyFooter

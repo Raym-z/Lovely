@@ -2,5 +2,12 @@ import LovelyExperience from "@/components/lovely/LovelyExperience";
 import { lovelyContent } from "@/content/lovely";
 
 export default function Home() {
-  return <LovelyExperience content={lovelyContent} />;
+  return (
+    <LovelyExperience
+      content={lovelyContent}
+      storageNamespace="lovely.demo"
+      personalizeHref="/create"
+      createHref="/create"
+    />
+  );
 }

@@ -115,6 +115,9 @@ export function SectionIntro({
   );
 }
 
+export const buttonBaseClasses =
+  "inline-flex h-[3.25rem] items-center justify-center gap-2.5 whitespace-nowrap rounded-full px-7 font-display text-[0.98rem] font-semibold";
+
 export function PrimaryButton({
   children,
   onClick,
@@ -142,7 +145,8 @@ export function PrimaryButton({
       whileTap={disabled ? undefined : { scale: 0.97, y: 2 }}
       transition={{ type: "spring", stiffness: 420, damping: 26 }}
       className={cn(
-        "group inline-flex items-center justify-center gap-2.5 rounded-full bg-strawberry px-7 py-3.5 font-display text-[0.98rem] font-semibold text-white shadow-button transition-colors duration-200 hover:bg-[#f56a80] disabled:cursor-wait disabled:opacity-80",
+        buttonBaseClasses,
+        "group bg-strawberry text-white shadow-button transition-colors duration-200 hover:bg-[#f56a80] disabled:cursor-wait disabled:opacity-80",
         className,
       )}
     >
@@ -159,23 +163,19 @@ export function GhostButton({
   onClick,
   className,
   icon = true,
-  size = "sm",
 }: {
   children: ReactNode;
   onClick?: () => void;
   className?: string;
   icon?: boolean;
-  size?: "sm" | "lg";
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
       className={cn(
-        "group inline-flex items-center justify-center rounded-full border-2 border-ink/10 bg-white/70 font-semibold text-ink-soft transition-colors hover:border-pink hover:bg-white hover:text-ink",
-        size === "lg"
-          ? "gap-2.5 px-7 py-3 font-display text-[0.98rem]"
-          : "gap-1.5 px-4 py-2.5 font-body text-sm",
+        buttonBaseClasses,
+        "group border-2 border-ink/10 bg-white/70 text-ink-soft transition-colors hover:border-pink hover:bg-white hover:text-ink",
         className,
       )}
     >
