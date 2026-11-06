@@ -6,7 +6,7 @@ import { HeartShape, SparkleShape, StarShape } from "./Doodles";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
-export function Envelope({ recipient, opening, onOpen }: { recipient: string; opening: boolean; onOpen: () => void }) {
+export function Envelope({ recipient, opening, onOpen, preview = false }: { recipient: string; opening: boolean; onOpen: () => void; preview?: boolean }) {
 	const uid = useId().replace(/:/g, "");
 	const sideFlapGradient = `side-flap-${uid}`;
 	const pocketGradient = `pocket-${uid}`;
@@ -16,26 +16,30 @@ export function Envelope({ recipient, opening, onOpen }: { recipient: string; op
 	return (
 		<motion.button
 			type='button'
-			onClick={onOpen}
-			disabled={opening}
-			aria-label='Open the envelope'
-			className='group relative block w-[min(78vw,380px)] rounded-[1.7rem] outline-none disabled:cursor-default'
+			onClick={preview ? undefined : onOpen}
+			disabled={opening || preview}
+			aria-label={preview ? undefined : "Open the envelope"}
+			aria-hidden={preview || undefined}
+			tabIndex={preview ? -1 : undefined}
+			className={`group relative block rounded-[1.7rem] outline-none disabled:cursor-default ${preview ? "w-full" : "w-[min(78vw,380px)]"}`}
 			initial={{ rotate: -1.5 }}
-			animate={opening ? { y: 0, rotate: 0 } : { y: [0, -9, 0], rotate: -1.5 }}
+			animate={preview ? { rotate: -1.5 } : opening ? { y: 0, rotate: 0 } : { y: [0, -9, 0], rotate: -1.5 }}
 			transition={
-				opening
-					? { duration: 0.4, ease }
-					: {
-							y: { duration: 5.6, repeat: Infinity, ease: "easeInOut" },
-							rotate: { duration: 0.7, ease },
-						}
+				preview
+					? { duration: 0 }
+					: opening
+						? { duration: 0.4, ease }
+						: {
+								y: { duration: 5.6, repeat: Infinity, ease: "easeInOut" },
+								rotate: { duration: 0.7, ease },
+							}
 			}
-			whileHover={opening ? undefined : { rotate: 1.2, scale: 1.015 }}
-			whileTap={opening ? undefined : { scale: 0.985 }}
+			whileHover={preview || opening ? undefined : { rotate: 1.2, scale: 1.015 }}
+			whileTap={preview || opening ? undefined : { scale: 0.985 }}
 		>
 			<span aria-hidden='true' className='absolute -bottom-8 left-1/2 h-8 w-[68%] -translate-x-1/2 rounded-[100%] bg-strawberry/20 blur-xl' />
 
-			<span className='relative block aspect-[100/86] w-full'>
+			<span className={`relative block w-full ${preview ? "aspect-[33/20]" : "aspect-[100/86]"}`}>
 				<span className='absolute inset-x-0 bottom-0 block aspect-[33/20]' style={{ perspective: 1000 }}>
 					<span className='absolute inset-0 rounded-[1.7rem] bg-gradient-to-br from-[#f8a9bb] via-[#f79bb0] to-[#ef7f97] shadow-[0_34px_70px_-34px_rgba(217,67,96,0.75)]' />
 
@@ -82,9 +86,17 @@ export function Envelope({ recipient, opening, onOpen }: { recipient: string; op
 							<rect x='1.5' y='1.5' width='657' height='397' rx='25' fill='none' stroke='rgba(255,255,255,0.28)' strokeWidth='2' />
 						</svg>
 
-						<span className='absolute inset-x-0 bottom-5 flex items-center justify-center gap-2 font-hand text-2xl text-white drop-shadow-[0_1px_2px_rgba(180,50,76,0.25)]'>
+						<span
+							className={`absolute inset-x-0 flex items-center justify-center gap-2 font-hand text-2xl text-white drop-shadow-[0_1px_2px_rgba(180,50,76,0.25)] ${preview ? "bottom-2" : "bottom-5"}`}
+						>
 							{/* For {recipient} */}
-							<HeartShape className='h-4 w-4 text-white' />
+							<HeartShape
+								className='text-white'
+								style={{
+									width: preview ? "0.5rem" : "1rem",
+									height: preview ? "0.5rem" : "1rem",
+								}}
+							/>
 						</span>
 					</span>
 

@@ -20,6 +20,7 @@ import {
   SparkleShape,
   StarShape,
 } from "@/components/lovely/Doodles";
+import { Envelope } from "@/components/lovely/Envelope";
 import { MemoryPhoto } from "@/components/lovely/MemoryPhoto";
 import {
   reasonCardStyles,
@@ -96,28 +97,13 @@ function InvitationPreview({ content }: { content: LovelyContent }) {
         {content.invitation.subtitle}
       </p>
 
-      <div className="relative mx-auto mt-4 aspect-[4/3] w-[72%]">
-        <span className="absolute inset-0 rounded-xl bg-[#f489a1] shadow-[0_14px_24px_-14px_rgba(217,67,96,0.7)]" />
-        <span
-          className="absolute inset-0 bg-[#f796ac]"
-          style={{
-            clipPath:
-              "polygon(0 100%, 0 30%, 50% 76%, 100% 30%, 100% 100%)",
-          }}
+      <div className="mx-auto mt-4 w-[74%]">
+        <Envelope
+          recipient={content.recipient || "you"}
+          opening={false}
+          onOpen={() => undefined}
+          preview
         />
-        <span
-          className="absolute inset-x-0 top-0 h-[58%]"
-          style={{
-            clipPath: "polygon(0 0, 50% 100%, 100% 0)",
-            background: "linear-gradient(160deg,#ffd3dd,#f489a1)",
-          }}
-        />
-        <span className="wax-seal absolute left-1/2 top-[57%] grid h-9 w-9 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full text-white ring-1 ring-white/40">
-          <HeartShape className="h-4 w-4" />
-        </span>
-        <span className="absolute inset-x-0 bottom-2 font-hand text-sm text-white">
-          For {content.recipient || "you"}
-        </span>
       </div>
 
       <span className="mt-4 inline-flex rounded-full bg-strawberry px-4 py-2 font-display text-[0.68rem] font-semibold text-white shadow-[0_3px_0_#d94360]">
