@@ -33,7 +33,7 @@ export function LittleGifts({ content, onContinue, onBack, storageNamespace }: {
 				<SecretMessages messages={content.secretMessages} className='lg:col-span-2' storageNamespace={storageNamespace} />
 			</div>
 
-			<JourneyFooter onBack={onBack} onContinue={onContinue} nextLabel='One last thing...' backLabel='The quiz' note='okay. this next part is my favorite.' />
+			<JourneyFooter onBack={onBack} onContinue={onContinue} nextLabel='One last thing...' backLabel='Back' note='okay. this next part is my favorite.' />
 		</section>
 	);
 }

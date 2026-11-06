@@ -304,7 +304,7 @@ export function CoupleQuiz({ content, onContinue, onBack, storageNamespace }: { 
 				</div>
 			</div>
 
-			<JourneyFooter onBack={onBack} onContinue={onContinue} nextLabel='Next: a few little gifts' backLabel='Our story' note='the gifts are better than the score, I promise.' />
+			<JourneyFooter onBack={onBack} onContinue={onContinue} nextLabel='Next' backLabel='Back' note='the gifts are better than the score, I promise.' />
 		</section>
 	);
 }

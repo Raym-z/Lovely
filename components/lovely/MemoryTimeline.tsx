@@ -145,7 +145,7 @@ export function MemoryTimeline({ content, imageMap = {}, onContinue, onBack }: {
 				</ol>
 			</div>
 
-			<JourneyFooter onBack={onBack} onContinue={onContinue} nextLabel='Next: a tiny quiz' backLabel='The invitation' note='there are no wrong answers next. well... maybe a few.' />
+			<JourneyFooter onBack={onBack} onContinue={onContinue} nextLabel='Next' backLabel='Back' note='there are no wrong answers next. well... maybe a few.' />
 
 			<AnimatePresence>{selected ? <MemoryDetail memory={selected} image={memoryImage(selected, imageMap)} onClose={() => setSelected(null)} /> : null}</AnimatePresence>
 		</section>
