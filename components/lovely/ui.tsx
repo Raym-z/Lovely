@@ -3,24 +3,28 @@
 import type { ReactNode } from "react";
 import { motion } from "framer-motion";
 import { ArrowRight, ChevronLeft, Sparkles } from "lucide-react";
+import type { Accent } from "@/content/lovely";
+import { accentPalette } from "@/lib/accent-palette";
 import { cn } from "@/lib/cn";
 import { HeartShape, Squiggle } from "./Doodles";
 
-type Tone = "pink" | "lavender" | "butter" | "mint" | "white";
+type Tone = Accent | "white";
+
+const accentStickerTones = Object.fromEntries(
+  accentPalette.map((entry) => [entry.value, entry.sticker]),
+) as Record<Accent, string>;
+
+const accentPillTones = Object.fromEntries(
+  accentPalette.map((entry) => [entry.value, entry.accentTone]),
+) as Record<Accent, string>;
 
 const stickerTones: Record<Tone, string> = {
-  pink: "border-pink-soft bg-blush text-strawberry-deep",
-  lavender: "border-lavender bg-lavender-soft text-[#7b60b5]",
-  butter: "border-butter bg-butter-soft text-[#a5771c]",
-  mint: "border-mint bg-mint-soft text-[#3d8a6d]",
+  ...accentStickerTones,
   white: "border-white bg-white/80 text-ink-soft",
 };
 
 const accentTones: Record<Tone, string> = {
-  pink: "bg-blush text-strawberry-deep",
-  lavender: "bg-lavender-soft text-[#7b60b5]",
-  butter: "bg-butter-soft text-[#a5771c]",
-  mint: "bg-mint-soft text-[#3d8a6d]",
+  ...accentPillTones,
   white: "bg-white text-ink-soft",
 };
 

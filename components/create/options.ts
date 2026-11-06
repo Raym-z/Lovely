@@ -1,4 +1,6 @@
-import type { Accent, PhotoVariant } from "@/content/lovely";
+import type { PhotoVariant } from "@/content/lovely";
+
+export { accentOptions } from "@/lib/accent-palette";
 
 export const photoOptions: Array<{
   value: PhotoVariant;
@@ -84,37 +86,5 @@ export const photoOptions: Array<{
     value: "sunday-morning",
     label: "Sunday morning",
     description: "Sunlit breakfast and nowhere to rush.",
-  },
-];
-
-export const accentOptions: Array<{
-  value: Accent;
-  label: string;
-  description: string;
-  swatch: string;
-}> = [
-  {
-    value: "pink",
-    label: "Strawberry pink",
-    description: "Soft blush with a sweet red edge.",
-    swatch: "bg-pink",
-  },
-  {
-    value: "lavender",
-    label: "Lavender",
-    description: "Dreamy lilac and quiet violet.",
-    swatch: "bg-lavender",
-  },
-  {
-    value: "butter",
-    label: "Butter yellow",
-    description: "Warm sunshine and a little glow.",
-    swatch: "bg-butter",
-  },
-  {
-    value: "mint",
-    label: "Soft mint",
-    description: "Fresh green with a gentle calm.",
-    swatch: "bg-mint",
   },
 ];

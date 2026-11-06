@@ -16,7 +16,19 @@ export type PhotoVariant =
   | "mountain"
   | "sunday-morning";
 
-export type Accent = "pink" | "lavender" | "butter" | "mint";
+export type Accent =
+  | "pink"
+  | "lavender"
+  | "butter"
+  | "mint"
+  | "peach"
+  | "baby-blue"
+  | "dusty-rose"
+  | "periwinkle"
+  | "sage"
+  | "cream"
+  | "coral"
+  | "powder-blue";
 
 export interface Memory {
   id: string;

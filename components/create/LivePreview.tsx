@@ -6,12 +6,8 @@ import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight, Heart, Maximize2, Quote, Sparkles, X } from "lucide-react";
 import { defaultEmergencyNote } from "@/content/lovely";
-import type {
-  Accent,
-  Coupon,
-  LovelyContent,
-  Memory,
-} from "@/content/lovely";
+import type { Coupon, LovelyContent, Memory } from "@/content/lovely";
+import { accentPaletteMap } from "@/lib/accent-palette";
 import type { GiftTab } from "./steps/GiftsStep";
 import {
   getLetterSection,
@@ -64,35 +60,6 @@ const stepMeta: Record<PreviewStep, { label: string; tip: string }> = {
   review: {
     label: "Final look",
     tip: "Give everything one last read, then send it off with a bow.",
-  },
-};
-
-const accentBadge: Record<Accent, string> = {
-  pink: "bg-pink-soft text-strawberry-deep",
-  lavender: "bg-lavender-soft text-[#7b60b5]",
-  butter: "bg-butter-soft text-[#a5771c]",
-  mint: "bg-mint-soft text-[#3d8a6d]",
-};
-
-const couponAccents: Record<
-  Accent,
-  { stub: string; button: string }
-> = {
-  pink: {
-    stub: "bg-pink-soft text-strawberry-deep",
-    button: "border-strawberry/30 text-strawberry-deep",
-  },
-  lavender: {
-    stub: "bg-lavender-soft text-[#7b60b5]",
-    button: "border-[#c7b4f4]/60 text-[#7b60b5]",
-  },
-  butter: {
-    stub: "bg-butter-soft text-[#a5771c]",
-    button: "border-[#e7cf8c]/70 text-[#a5771c]",
-  },
-  mint: {
-    stub: "bg-mint-soft text-[#3d8a6d]",
-    button: "border-[#a9ddc9]/70 text-[#3d8a6d]",
   },
 };
 
@@ -178,7 +145,7 @@ function MemoryPreviewCard({
         <span
           className={cn(
             "absolute -bottom-2.5 -right-2.5 z-10 grid h-8 w-8 rotate-6 place-items-center rounded-full border-2 border-white font-hand text-[0.55rem] font-bold",
-            accentBadge[memory.accent],
+            accentPaletteMap[memory.accent].soft,
           )}
         >
           no. {String(index + 1).padStart(2, "0")}
@@ -198,7 +165,7 @@ function MemoryPreviewCard({
           <span
             className={cn(
               "shrink-0 rounded-full px-2 py-0.5 font-body text-[0.42rem] font-bold uppercase tracking-[0.1em]",
-              accentBadge[memory.accent],
+              accentPaletteMap[memory.accent].soft,
             )}
           >
             <Heart className="mr-1 inline h-2 w-2" strokeWidth={3} />
@@ -370,14 +337,14 @@ function QuizPreview({
 }
 
 function CouponPreviewTicket({ coupon }: { coupon: Coupon }) {
-  const accent = couponAccents[coupon.accent];
+  const accent = accentPaletteMap[coupon.accent];
 
   return (
     <div className="relative flex overflow-hidden rounded-[1.1rem] border-2 border-white bg-paper text-left shadow-[0_12px_28px_-18px_rgba(73,52,59,0.35)]">
       <div
         className={cn(
           "relative flex w-11 shrink-0 flex-col items-center justify-center gap-1 py-3",
-          accent.stub,
+          accent.soft,
         )}
       >
         <HeartShape className="h-4 w-4" />
@@ -417,7 +384,7 @@ function CouponPreviewTicket({ coupon }: { coupon: Coupon }) {
           <span
             className={cn(
               "shrink-0 rounded-full border-2 bg-white px-2 py-1 font-body text-[0.44rem] font-bold uppercase tracking-[0.08em]",
-              accent.button,
+              accent.couponButton,
             )}
           >
             Redeem

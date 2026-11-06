@@ -21,7 +21,20 @@ const photoVariantSchema = z.enum([
   "sunday-morning",
 ]);
 
-const accentSchema = z.enum(["pink", "lavender", "butter", "mint"]);
+const accentSchema = z.enum([
+  "pink",
+  "lavender",
+  "butter",
+  "mint",
+  "peach",
+  "baby-blue",
+  "dusty-rose",
+  "periwinkle",
+  "sage",
+  "cream",
+  "coral",
+  "powder-blue",
+]);
 
 const requiredText = (max: number) => z.string().trim().min(1).max(max);
 

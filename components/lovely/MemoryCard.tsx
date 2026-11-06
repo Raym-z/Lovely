@@ -3,16 +3,10 @@
 import { motion } from "framer-motion";
 import { Heart, Maximize2 } from "lucide-react";
 import { cn } from "@/lib/cn";
-import type { Accent, Memory } from "@/content/lovely";
+import type { Memory } from "@/content/lovely";
+import { accentPaletteMap } from "@/lib/accent-palette";
 import { MemoryPhoto } from "./MemoryPhoto";
 import { Sticker } from "./ui";
-
-const accentSticker: Record<Accent, string> = {
-  pink: "bg-pink-soft text-strawberry-deep",
-  lavender: "bg-lavender-soft text-[#7b60b5]",
-  butter: "bg-butter-soft text-[#a5771c]",
-  mint: "bg-mint-soft text-[#3d8a6d]",
-};
 
 export function MemoryCard({
   memory,
@@ -53,7 +47,7 @@ export function MemoryCard({
             aria-hidden="true"
             className={cn(
               "absolute -bottom-3 -right-3 z-10 grid h-11 w-11 rotate-6 place-items-center rounded-full border-2 border-white font-hand text-[0.72rem] font-bold",
-              accentSticker[memory.accent],
+              accentPaletteMap[memory.accent].soft,
             )}
           >
             no. {String(index + 1).padStart(2, "0")}
