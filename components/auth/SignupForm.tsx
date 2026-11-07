@@ -13,7 +13,6 @@ import {
   buildAuthRedirectUrl,
   clearPasswordPending,
   clearPendingVerification,
-  markPasswordPending,
   markVerificationSent,
   rememberPendingVerification,
 } from "@/lib/auth-email";
@@ -94,6 +93,17 @@ export function SignupForm({
       return;
     }
 
+    const passwordIssue = passwordError(password);
+    if (passwordIssue) {
+      setError(passwordIssue);
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError("Those passwords do not match yet.");
+      return;
+    }
+
     const supabase = getClient();
     if (!supabase) {
       setError("Accounts are not configured right now.");
@@ -103,19 +113,19 @@ export function SignupForm({
     setLoading(true);
 
     try {
-      const { error: emailUpdateError } = await supabase.auth.updateUser(
-        { email: cleanedEmail },
+      const { error: updateError } = await supabase.auth.updateUser(
+        { email: cleanedEmail, password },
         { emailRedirectTo: buildAuthRedirectUrl(nextPath) },
       );
 
-      if (emailUpdateError) {
-        setError(friendlyAuthError(emailUpdateError.message));
+      if (updateError) {
+        setError(friendlyAuthError(updateError.message));
         return;
       }
 
       rememberPendingVerification(cleanedEmail, nextPath);
       markVerificationSent();
-      markPasswordPending();
+      clearPasswordPending();
 
       router.replace(withAuthNext("/verify-email", nextPath));
     } finally {
@@ -260,7 +270,7 @@ export function SignupForm({
       description={
         completing
           ? "Your email is confirmed. Choose a password so you can log in from any device."
-          : "We'll email you a confirmation link first. Once confirmed, you'll choose your password and your guest page comes with you."
+          : "Your guest page and all its details stay right where they are. We'll email a confirmation link, then your account is official."
       }
       footer={
         <>
@@ -287,39 +297,38 @@ export function SignupForm({
               autoComplete="email"
               placeholder="you@example.com"
               maxLength={320}
+              required
             />
           </Field>
         )}
 
-        {completing ? (
-          <>
-            <Field
-              label="New password"
-              hint="At least 8 characters with a letter and a number."
-              required
-            >
-              <TextInput
-                type="password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                autoComplete="new-password"
-                placeholder="Choose a password"
-                maxLength={200}
-              />
-            </Field>
+        <Field
+          label={completing ? "New password" : "Password"}
+          hint="At least 8 characters with a letter and a number."
+          required
+        >
+          <TextInput
+            type="password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            autoComplete="new-password"
+            placeholder="Choose a password"
+            maxLength={200}
+            required
+          />
+        </Field>
 
-            <Field label="Confirm password" required>
-              <TextInput
-                type="password"
-                value={confirmPassword}
-                onChange={(event) => setConfirmPassword(event.target.value)}
-                autoComplete="new-password"
-                placeholder="Type it once more"
-                maxLength={200}
-              />
-            </Field>
-          </>
-        ) : null}
+        <Field label="Confirm password" required>
+          <TextInput
+            type="password"
+            value={confirmPassword}
+            onChange={(event) => setConfirmPassword(event.target.value)}
+            autoComplete="new-password"
+            placeholder="Type it once more"
+            maxLength={200}
+            required
+          />
+        </Field>
 
         {error ? (
           <p
@@ -339,7 +348,7 @@ export function SignupForm({
             ? "Saving..."
             : completing
               ? "Finish account"
-              : "Send confirmation link"}
+              : "Create free account"}
           {loading ? null : <ArrowRight className="h-4 w-4" />}
         </button>
       </form>
