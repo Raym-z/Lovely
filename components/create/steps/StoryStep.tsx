@@ -7,7 +7,7 @@ import { cn } from "@/lib/cn";
 import { makeId } from "@/lib/ids";
 import { todayMemoryDate } from "@/lib/memory-date";
 import { DateField } from "../DateField";
-import { AddButton, CollapsibleCard, EditorCard, Field, OptionPicker, TextArea, TextInput } from "../fields";
+import { AddButton, CollapsibleCard, EditorCard, Field, OptionPicker, TextArea, TextInput, fieldControlHeight } from "../fields";
 import { MemoryPhotoField, MemoryPhotoSourceToggle } from "../MemoryPhotoField";
 import { accentOptions } from "../options";
 
@@ -108,7 +108,7 @@ export function StoryStep({
 								<TextArea rows={2} value={memory.excerpt} onChange={(event) => updateMemory(index, { excerpt: event.target.value })} maxLength={240} />
 							</Field>
 							<Field label='The tiny detail' hint='A little handwritten note inside the opened memory.' required>
-								<TextArea rows={2} value={memory.detail} onChange={(event) => updateMemory(index, { detail: event.target.value })} maxLength={1200} />
+								<TextArea rows={2} value={memory.detail} onChange={(event) => updateMemory(index, { detail: event.target.value })} maxLength={1200} className='min-h-36 sm:min-h-[5.5rem]' />
 							</Field>
 							<div className='mb-4'>
 								<MemoryPhotoSourceToggle source={memory.photoSource === "upload" ? "upload" : "template"} onChange={(source) => updateMemory(index, { photoSource: source })} />
@@ -128,10 +128,10 @@ export function StoryStep({
 									/>
 								</div>
 								<Field label='Sticker color' required>
-									<OptionPicker value={memory.accent} onChange={(accent) => updateMemory(index, { accent })} options={accentOptions} label='Sticker color' />
+									<OptionPicker value={memory.accent} onChange={(accent) => updateMemory(index, { accent })} options={accentOptions} label='Sticker color' triggerClassName={fieldControlHeight} />
 								</Field>
 								<Field label='Memory note' hint='Optional. The little nameplate beside this polaroid. Leave blank for a default.' className={cn(memory.photoSource !== "upload" && "sm:col-span-2")}>
-									<TextInput value={memory.memoryNote ?? ""} onChange={(event) => updateMemory(index, { memoryNote: event.target.value })} placeholder='one of my favorites.' maxLength={160} className='h-[59px]' />
+									<TextInput value={memory.memoryNote ?? ""} onChange={(event) => updateMemory(index, { memoryNote: event.target.value })} placeholder='one of my favorites.' maxLength={160} className={fieldControlHeight} />
 								</Field>
 							</div>
 						</CollapsibleCard>

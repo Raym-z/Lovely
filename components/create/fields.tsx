@@ -37,6 +37,8 @@ import { HeartShape } from "@/components/lovely/Doodles";
 export const inputClasses =
   "w-full rounded-xl border-2 border-ink/10 bg-white px-3.5 py-2.5 font-body text-sm text-ink outline-none transition-colors placeholder:text-ink-soft/35 focus:border-pink focus:bg-white aria-invalid:border-strawberry aria-invalid:bg-blush/30";
 
+export const fieldControlHeight = "min-h-[3.75rem]";
+
 export function Field({
   label,
   hint,
@@ -164,12 +166,14 @@ export function OptionPicker<T extends string>({
   options,
   label = "Choose an option",
   className,
+  triggerClassName,
 }: {
   value: T;
   onChange: (value: T) => void;
   options: Array<OptionPickerOption<T>>;
   label?: string;
   className?: string;
+  triggerClassName?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -302,6 +306,7 @@ export function OptionPicker<T extends string>({
         className={cn(
           "flex w-full items-center gap-2.5 rounded-xl border-2 border-ink/10 bg-white px-2.5 py-2 text-left outline-none transition-all hover:border-pink/60 hover:bg-[#fffaf8] focus-visible:border-pink focus-visible:ring-2 focus-visible:ring-pink/20",
           open && "border-pink bg-[#fffaf8] shadow-[0_8px_24px_-18px_rgba(241,91,114,0.75)]",
+          triggerClassName,
         )}
       >
         {selected ? <PickerOptionVisual option={selected} /> : null}

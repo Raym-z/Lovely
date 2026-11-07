@@ -11,7 +11,7 @@ import {
 import { useGuestSession } from "@/components/auth/GuestSessionProvider";
 import { MemoryPhoto } from "@/components/lovely/MemoryPhoto";
 import { cn } from "@/lib/cn";
-import { OptionPicker } from "./fields";
+import { OptionPicker, fieldControlHeight } from "./fields";
 import { ImageCropper, type CroppedImage } from "./ImageCropper";
 import { photoOptions } from "./options";
 
@@ -204,6 +204,7 @@ export function MemoryPhotoField({
             onChange={(photo) => onPatch({ photo, photoSource: "template" })}
             options={scenePickerOptions}
             label="Photo scene"
+            triggerClassName={fieldControlHeight}
           />
         </div>
       ) : (
