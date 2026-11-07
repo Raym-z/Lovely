@@ -72,11 +72,56 @@ From the success screen, guests can optionally create a permanent account. Regis
 
 For existing deployments, run `supabase/migrations/20261106000000_account_ownership.sql` (or the latest `supabase/schema.sql`) to add `lovely_pages.owner_id` and the owner-only RLS policies. Pages created before the migration keep `owner_id = null` and remain editable with their edit key; editing one while signed in claims it for that account.
 
-If email confirmation is enabled, the account is upgraded after the user confirms their email and returns to `/signup?complete=1` to set the password. The guest session and page ownership are preserved throughout.
+Email confirmation is required for permanent accounts. Enable **Confirm email** in Supabase Auth settings, and keep Resend configured as the project's SMTP provider. After registration, the user is sent to `/verify-email`, where they can resend the message with a 60-second client cooldown. Confirmation links return through `/auth/confirm`, which exchanges the Supabase code, token hash, or session tokens, verifies the resulting user with Supabase Auth, and then continues to the account. If the password could not be set before confirmation, the confirmation screen continues to `/signup?complete=1` so the password can be finished after verification.
+
+Unverified permanent accounts are redirected to `/verify-email` from `/account` and `/create`. Guest sessions are never required to verify an email, and public Lovely pages and edit-key access remain unchanged.
+
+Configure the Supabase **Site URL** as the production Lovely origin and add these redirect URLs:
+
+```text
+http://localhost:3000/auth/confirm
+https://your-production-domain/auth/confirm
+```
+
+Set `NEXT_PUBLIC_SITE_URL` in production when the confirmation origin differs from the browser origin. Use the existing `supabase/email-templates/confirm-signup.html` template for both **Confirm signup** and **Change Email Address** so the guest-to-permanent upgrade keeps Lovely's branding. The template must keep using `{{ .ConfirmationURL }}`; Resend SMTP is configured in Supabase Auth, not in the app.
 
 If a guest instead logs into a different existing account, `/login` captures the guest access token in memory before switching sessions. After login, the server verifies both Supabase identities and calls the transactional `transfer_guest_ownership` database function to move the guest's pages and images to the destination account. Page IDs, edit keys, image references, and public Storage paths are preserved. The transfer is idempotent and records completed source guest UIDs so a guest cannot be moved to two accounts. If the transfer fails, the account session remains active and the user can retry while the guest proof is still in memory, or use the original edit key.
 
 Run `supabase/migrations/20261106020000_guest_ownership_transfer.sql` after the account and image migrations to enable this transfer flow.
+
+## Anonymous guest cleanup
+
+Unused anonymous guests are reviewed once per day (03:17 UTC) by a protected Vercel Cron route. A guest is deleted only when **all** of these are true:
+
+- It is an anonymous Supabase Auth user.
+- Its last verified activity was at least 30 days ago.
+- It owns no rows in `public.lovely_pages`.
+- It owns no rows in `public.lovely_images` (as `owner_id` or `uploaded_by_user_id`).
+- It has no incomplete row in `public.lovely_account_transfers`.
+
+Registered accounts, guests who own pages or images, recently active guests, and guests whose activity or ownership cannot be verified are always kept.
+
+Meaningful activity is recorded server-side in `public.lovely_user_activity` when a guest creates or edits a page, uploads a photo, or deletes a photo. Page views and background requests are intentionally excluded. Accounts without an activity row fall back to Supabase Auth's `last_sign_in_at`; if that is also unknown, the account is skipped rather than assumed abandoned.
+
+### Setup
+
+1. Run [`supabase/migrations/20261108000000_anonymous_user_cleanup.sql`](supabase/migrations/20261108000000_anonymous_user_cleanup.sql) in the Supabase SQL editor. New deployments can run the updated [`supabase/schema.sql`](supabase/schema.sql) instead.
+2. Add `CRON_SECRET` to the production environment. Vercel Cron sends it automatically as `Authorization: Bearer <CRON_SECRET>`.
+3. Deploy. The schedule lives in [`vercel.json`](vercel.json).
+4. Run the first cleanup as a dry run and review the response and the `public.lovely_cleanup_runs` table.
+5. Only after the dry run looks right, set `ANONYMOUS_CLEANUP_DELETE_ENABLED=true` and redeploy to enable real deletion.
+
+### Manual dry run
+
+```bash
+curl -s \
+  -H "Authorization: Bearer $CRON_SECRET" \
+  "https://your-deployment.example/api/cron/cleanup-anonymous-users?dryRun=1"
+```
+
+Use `?limit=25` to examine a smaller batch. The endpoint refuses unauthorised requests, never accepts user IDs from the client, and only uses the server-side Supabase secret key. Until `ANONYMOUS_CLEANUP_DELETE_ENABLED` is `true`, every scheduled run is a dry run.
+
+Cleanup is idempotent: it lists and checks first, deletes only eligible users, re-verifies ownership immediately before deleting, and records every run in `public.lovely_cleanup_runs` with counts and per-user outcomes. Individual deletion failures are recorded without stopping the rest of the batch.
 
 ## Photo uploads
 

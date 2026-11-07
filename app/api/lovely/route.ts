@@ -14,6 +14,7 @@ import {
   MAX_CONTENT_BYTES,
   validateLovelyContent,
 } from "@/lib/lovely-schema";
+import { recordUserActivity } from "@/lib/user-activity";
 
 export async function POST(request: Request) {
   const configIssue = getStorageConfigIssue();
@@ -80,6 +81,8 @@ export async function POST(request: Request) {
       await deletePageRecord(created.uid).catch(() => undefined);
       throw referenceError;
     }
+
+    await recordUserActivity([ownerId]);
 
     return NextResponse.json(
       {

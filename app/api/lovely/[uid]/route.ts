@@ -17,6 +17,7 @@ import {
   MAX_CONTENT_BYTES,
   validateLovelyContent,
 } from "@/lib/lovely-schema";
+import { recordUserActivity } from "@/lib/user-activity";
 
 type RouteContext = {
   params: Promise<{ uid: string }>;
@@ -146,32 +147,20 @@ export async function PUT(request: Request, context: RouteContext) {
       );
     }
 
-    const references = collectMemoryImageReferences(parsed.data);
-    if (references.length > 0) {
-      const storedPage = await getPage(uid);
-      if (!storedPage) {
-        return NextResponse.json(
-          { error: "This Lovely could not be found." },
-          { status: 404 },
-        );
-      }
-
-      await syncPageImageReferences(
-        uid,
-        storedPage.ownerId,
-        references,
+    const storedPage = await getPage(uid);
+    if (!storedPage) {
+      return NextResponse.json(
+        { error: "This Lovely could not be found." },
+        { status: 404 },
       );
-      if (storedPage.ownerId) {
-        await claimPageImages(uid, storedPage.ownerId);
-      }
-    } else {
-      const storedPage = await getPage(uid);
-      if (storedPage) {
-        await syncPageImageReferences(uid, storedPage.ownerId, []);
-        if (storedPage.ownerId) {
-          await claimPageImages(uid, storedPage.ownerId);
-        }
-      }
+    }
+
+    await recordUserActivity([ownerId, storedPage.ownerId]);
+
+    const references = collectMemoryImageReferences(parsed.data);
+    await syncPageImageReferences(uid, storedPage.ownerId, references);
+    if (storedPage.ownerId) {
+      await claimPageImages(uid, storedPage.ownerId);
     }
 
     return NextResponse.json({ ok: true, storage: result.storage });

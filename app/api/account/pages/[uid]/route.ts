@@ -5,6 +5,7 @@ import {
   getPage,
   isValidUid,
 } from "@/lib/lovely-store";
+import { isRegisteredUnverified } from "@/lib/auth-verification";
 
 type RouteContext = {
   params: Promise<{ uid: string }>;
@@ -17,6 +18,13 @@ export async function DELETE(_request: Request, context: RouteContext) {
     return NextResponse.json(
       { error: "Sign in to delete this Lovely." },
       { status: 401 },
+    );
+  }
+
+  if (isRegisteredUnverified(user)) {
+    return NextResponse.json(
+      { error: "Verify your email before managing your Lovely pages." },
+      { status: 403 },
     );
   }
 

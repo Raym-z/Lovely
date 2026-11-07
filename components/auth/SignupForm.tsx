@@ -1,15 +1,25 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowRight, Heart, Mail } from "lucide-react";
+import { ArrowRight, Heart } from "lucide-react";
 import { AuthShell } from "./AuthShell";
 import { useGuestSession } from "./GuestSessionProvider";
 import { Field, TextInput } from "@/components/create/fields";
 import { friendlyAuthError } from "@/lib/auth-errors";
+import {
+  buildAuthRedirectUrl,
+  clearPasswordPending,
+  clearPendingVerification,
+  markPasswordPending,
+  markVerificationSent,
+  rememberPendingVerification,
+} from "@/lib/auth-email";
 import { safeAuthNext, withAuthNext } from "@/lib/auth-redirect";
+import { isRegisteredUnverified } from "@/lib/auth-verification";
+import { LoadingScreen } from "@/components/lovely/LoadingScreen";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -38,8 +48,14 @@ export function SignupForm({
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const needsEmailVerification = isRegisteredUnverified(user);
+
+  useEffect(() => {
+    if (needsEmailVerification && !completing) {
+      router.replace(withAuthNext("/verify-email", nextPath));
+    }
+  }, [completing, needsEmailVerification, nextPath, router]);
 
   function getClient() {
     return getSupabaseBrowserClient({ url: supabaseUrl, key: supabaseKey });
@@ -54,17 +70,14 @@ export function SignupForm({
     });
 
     if (passwordUpdateError) {
-      const rawMessage = passwordUpdateError.message.toLowerCase();
       return {
         ok: false as const,
         message: friendlyAuthError(passwordUpdateError.message),
-        needsConfirmation:
-          rawMessage.includes("anonymous") ||
-          rawMessage.includes("confirm") ||
-          rawMessage.includes("verified"),
       };
     }
 
+    clearPasswordPending();
+    clearPendingVerification();
     router.replace(nextPath ?? "/account");
     return { ok: true as const };
   }
@@ -74,7 +87,6 @@ export function SignupForm({
     if (loading) return;
 
     setError(null);
-    setNotice(null);
     const cleanedEmail = email.trim();
 
     if (!emailPattern.test(cleanedEmail)) {
@@ -104,11 +116,7 @@ export function SignupForm({
     try {
       const { error: emailUpdateError } = await supabase.auth.updateUser(
         { email: cleanedEmail },
-        {
-          emailRedirectTo: `${window.location.origin}/signup?complete=1${
-            nextPath ? `&next=${encodeURIComponent(nextPath)}` : ""
-          }`,
-        },
+        { emailRedirectTo: buildAuthRedirectUrl(nextPath) },
       );
 
       if (emailUpdateError) {
@@ -116,16 +124,20 @@ export function SignupForm({
         return;
       }
 
-      const passwordResult = await finishPassword(supabase, password);
-      if (passwordResult.ok) return;
+      rememberPendingVerification(cleanedEmail, nextPath);
+      markVerificationSent();
 
-      if (passwordResult.needsConfirmation) {
-        setNotice(
-          `Check ${cleanedEmail} for a confirmation link. Once your email is confirmed, come back to this page to finish setting your password.`,
-        );
+      const { error: passwordUpdateError } = await supabase.auth.updateUser({
+        password,
+      });
+
+      if (passwordUpdateError) {
+        markPasswordPending();
       } else {
-        setError(passwordResult.message);
+        clearPasswordPending();
       }
+
+      router.replace(withAuthNext("/verify-email", nextPath));
     } finally {
       setLoading(false);
     }
@@ -136,7 +148,6 @@ export function SignupForm({
     if (loading) return;
 
     setError(null);
-    setNotice(null);
     const passwordIssue = passwordError(password);
     if (passwordIssue) {
       setError(passwordIssue);
@@ -219,6 +230,12 @@ export function SignupForm({
           ) : null}
         </div>
       </AuthShell>
+    );
+  }
+
+  if (needsEmailVerification && !completing) {
+    return (
+      <LoadingScreen message="Taking you to verify your email..." />
     );
   }
 
@@ -327,15 +344,6 @@ export function SignupForm({
           >
             {error}
           </p>
-        ) : null}
-
-        {notice ? (
-          <div className="rounded-xl border-2 border-butter bg-butter-soft/55 px-3.5 py-3 font-body text-xs leading-relaxed text-[#7a5a1f]">
-            <div className="flex items-start gap-2">
-              <Mail className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-              <p>{notice}</p>
-            </div>
-          </div>
         ) : null}
 
         <button

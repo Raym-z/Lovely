@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   ArrowRight,
   Camera,
@@ -24,6 +25,7 @@ import {
   type SecretMessage,
 } from "@/content/lovely";
 import { cn } from "@/lib/cn";
+import { isRegisteredUnverified } from "@/lib/auth-verification";
 import { CREATE_DRAFT_KEY } from "@/lib/create-draft";
 import { useHydrated } from "@/lib/use-hydrated";
 import {
@@ -248,6 +250,7 @@ function EditKeyBanner({
 }
 
 export default function CreateExperience() {
+  const router = useRouter();
   const hydrated = useHydrated();
   const {
     session,
@@ -255,6 +258,13 @@ export default function CreateExperience() {
     isAnonymous,
     status: guestStatus,
   } = useGuestSession();
+  const needsEmailVerification = isRegisteredUnverified(user);
+
+  useEffect(() => {
+    if (hydrated && needsEmailVerification) {
+      router.replace("/verify-email?next=%2Fcreate");
+    }
+  }, [hydrated, needsEmailVerification, router]);
   const authToken = session?.access_token ?? null;
   const authTokenRef = useRef<string | null>(authToken);
 
@@ -748,6 +758,10 @@ export default function CreateExperience() {
 
   if (!hydrated) {
     return <LoadingScreen message="Opening the editor..." />;
+  }
+
+  if (needsEmailVerification) {
+    return <LoadingScreen message="Taking you to verify your email..." />;
   }
 
   if (editUid && loadState === "loading") {

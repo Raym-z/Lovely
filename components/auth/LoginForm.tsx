@@ -9,7 +9,9 @@ import { AuthShell } from "./AuthShell";
 import { TurnstileWidget } from "./TurnstileWidget";
 import { Field, TextInput } from "@/components/create/fields";
 import { friendlyAuthError } from "@/lib/auth-errors";
+import { rememberPendingVerification } from "@/lib/auth-email";
 import { safeAuthNext, withAuthNext } from "@/lib/auth-redirect";
+import { isRegisteredUnverified } from "@/lib/auth-verification";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -205,6 +207,12 @@ export function LoginForm({
       });
 
       if (signInError) {
+        if (signInError.message.toLowerCase().includes("email not confirmed")) {
+          rememberPendingVerification(cleanedEmail, nextPath);
+          router.replace(withAuthNext("/verify-email", nextPath));
+          return;
+        }
+
         setError(friendlyAuthError(signInError.message));
         setCaptchaToken(null);
         setCaptchaKey((current) => current + 1);
@@ -216,6 +224,15 @@ export function LoginForm({
 
       if (!newSession || !newUser) {
         setError("Signed in, but the new session could not be read.");
+        return;
+      }
+
+      if (isRegisteredUnverified(newUser)) {
+        rememberPendingVerification(
+          newUser.email ?? cleanedEmail,
+          nextPath,
+        );
+        router.replace(withAuthNext("/verify-email", nextPath));
         return;
       }
 

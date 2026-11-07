@@ -1,23 +1,31 @@
 import { NextResponse } from "next/server";
 import { decompressConfig } from "@/lib/compression";
 import {
-  getAuthenticatedUserIdFromRequest,
+  getAuthenticatedUserFromRequest,
   getPagesByOwner,
 } from "@/lib/lovely-store";
+import { isRegisteredUnverified } from "@/lib/auth-verification";
 import { validateLovelyContent } from "@/lib/lovely-schema";
 
 export async function GET(request: Request) {
-  const ownerId = await getAuthenticatedUserIdFromRequest(request);
+  const user = await getAuthenticatedUserFromRequest(request);
 
-  if (!ownerId) {
+  if (!user) {
     return NextResponse.json(
       { error: "Sign in to view your Lovely pages." },
       { status: 401 },
     );
   }
 
+  if (isRegisteredUnverified(user)) {
+    return NextResponse.json(
+      { error: "Verify your email before opening your account." },
+      { status: 403 },
+    );
+  }
+
   try {
-    const pages = await getPagesByOwner(ownerId);
+    const pages = await getPagesByOwner(user.id);
 
     return NextResponse.json(
       {

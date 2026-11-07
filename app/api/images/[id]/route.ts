@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { deleteOwnedImage } from "@/lib/image-store";
 import { getAuthenticatedUserIdFromRequest } from "@/lib/lovely-store";
+import { recordUserActivity } from "@/lib/user-activity";
 
 type RouteContext = {
   params: Promise<{ id: string }>;
@@ -51,6 +52,8 @@ export async function DELETE(request: Request, context: RouteContext) {
         { status: 503 },
       );
     }
+
+    await recordUserActivity([ownerId]);
 
     return NextResponse.json({ ok: true });
   } catch (error) {

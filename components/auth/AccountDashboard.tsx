@@ -22,6 +22,7 @@ import {
   readCreateDraftSummary,
   type CreateDraftSummary,
 } from "@/lib/create-draft";
+import { isRegisteredUnverified } from "@/lib/auth-verification";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 type OwnedPage = {
@@ -42,6 +43,7 @@ export function AccountDashboard({
   const router = useRouter();
   const { session, user, isAnonymous, status, error: authError } =
     useGuestSession();
+  const needsEmailVerification = isRegisteredUnverified(user);
   const [pages, setPages] = useState<OwnedPage[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -61,7 +63,7 @@ export function AccountDashboard({
   }
 
   useEffect(() => {
-    if (status !== "ready" || !user) return;
+    if (status !== "ready" || !user || needsEmailVerification) return;
     const token = session?.access_token;
     if (!token) return;
 
@@ -97,13 +99,24 @@ export function AccountDashboard({
     return () => {
       active = false;
     };
-  }, [refreshKey, session?.access_token, status, user]);
+  }, [
+    needsEmailVerification,
+    refreshKey,
+    session?.access_token,
+    status,
+    user,
+  ]);
 
   useEffect(() => {
+    if (status === "ready" && needsEmailVerification) {
+      router.replace("/verify-email?next=%2Faccount");
+      return;
+    }
+
     if (status === "ready" && !user) {
       router.replace("/login");
     }
-  }, [router, status, user]);
+  }, [needsEmailVerification, router, status, user]);
 
   async function signOut() {
     if (signingOut) return;
@@ -196,6 +209,10 @@ export function AccountDashboard({
         </Link>
       </div>
     );
+  }
+
+  if (needsEmailVerification) {
+    return <LoadingScreen message="Taking you to verify your email..." />;
   }
 
   if (!user) {

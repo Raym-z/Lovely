@@ -11,6 +11,7 @@ import {
   validateStoredImage,
 } from "@/lib/image-validation";
 import { getStorageConfigIssue } from "@/lib/lovely-store";
+import { recordUserActivity } from "@/lib/user-activity";
 
 function queryValue(value: FormDataEntryValue | null) {
   return typeof value === "string" ? value.trim() : "";
@@ -144,6 +145,11 @@ export async function POST(request: Request) {
         console.error("Failed to reference uploaded Lovely image", referenceError);
       });
     }
+
+    await recordUserActivity([
+      authorization.uploaderUserId,
+      authorization.ownerId,
+    ]);
 
     return NextResponse.json({ image }, { status: 201 });
   } catch (error) {

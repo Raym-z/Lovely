@@ -4,6 +4,7 @@ import {
   getSupabaseAdminClient,
   getUserFromAccessToken,
 } from "@/lib/lovely-store";
+import { isRegisteredUnverified } from "@/lib/auth-verification";
 
 type TransferResult = {
   status:
@@ -48,6 +49,13 @@ export async function POST(request: Request) {
   if (destinationUser.is_anonymous) {
     return NextResponse.json(
       { error: "Sign in to a permanent account to receive the guest pages." },
+      { status: 403 },
+    );
+  }
+
+  if (isRegisteredUnverified(destinationUser)) {
+    return NextResponse.json(
+      { error: "Verify your email before moving guest pages into this account." },
       { status: 403 },
     );
   }
