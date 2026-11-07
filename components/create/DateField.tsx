@@ -68,7 +68,7 @@ export function DateField({
   placeholder?: string;
 }) {
   const [open, setOpen] = useState(false);
-  const [view, setView] = useState<"days" | "years">("days");
+  const [view, setView] = useState<"days" | "months" | "years">("days");
   const [viewDate, setViewDate] = useState(() => new Date());
   const [calendarStyle, setCalendarStyle] = useState<CSSProperties>({});
   const wrapperRef = useRef<HTMLDivElement | null>(null);
@@ -96,6 +96,10 @@ export function DateField({
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key !== "Escape") return;
       if (view === "years") {
+        setView("months");
+        return;
+      }
+      if (view === "months") {
         setView("days");
         return;
       }
@@ -141,13 +145,21 @@ export function DateField({
       if (view === "years") {
         return new Date(current.getFullYear() + delta * 12, current.getMonth(), 1);
       }
+      if (view === "months") {
+        return new Date(current.getFullYear() + delta, current.getMonth(), 1);
+      }
       return new Date(current.getFullYear(), current.getMonth() + delta, 1);
     });
   }
 
+  function selectMonth(month: number) {
+    setViewDate((current) => new Date(current.getFullYear(), month, 1));
+    setView("days");
+  }
+
   function selectYear(year: number) {
     setViewDate((current) => new Date(year, current.getMonth(), 1));
-    setView("days");
+    setView("months");
   }
 
   function selectDay(day: number) {
@@ -170,6 +182,9 @@ export function DateField({
     const normalized = normalizeMemoryDateInput(value);
     if (normalized !== value) onChange(normalized);
   }
+
+  const headerLinkClass =
+    "rounded-md px-0.5 font-display text-sm font-semibold text-ink underline decoration-pink decoration-dotted decoration-2 underline-offset-4 transition-colors hover:text-strawberry hover:decoration-strawberry focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink/40";
 
   return (
     <div ref={wrapperRef} className={cn("relative", className)}>
@@ -229,29 +244,51 @@ export function DateField({
                     <button
                       type="button"
                       onClick={() => shiftRange(-1)}
-                      aria-label={view === "years" ? "Previous years" : "Previous month"}
+                      aria-label={
+                        view === "years"
+                          ? "Previous years"
+                          : view === "months"
+                            ? "Previous year"
+                            : "Previous month"
+                      }
                       className="grid h-7 w-7 place-items-center rounded-full text-ink-soft/60 transition-colors hover:bg-blush hover:text-strawberry"
                     >
                       <ChevronLeft className="h-4 w-4" />
                     </button>
                     {view === "days" ? (
-                      <p className="font-display text-sm font-semibold text-ink">
-                        {MEMORY_DATE_MONTHS[viewDate.getMonth()]}{" "}
+                      <p className="flex items-center gap-1 font-display text-sm font-semibold text-ink">
+                        <button
+                          type="button"
+                          onClick={() => setView("months")}
+                          aria-label="Change month"
+                          className={headerLinkClass}
+                        >
+                          {MEMORY_DATE_MONTHS[viewDate.getMonth()]}
+                        </button>
                         <button
                           type="button"
                           onClick={() => setView("years")}
                           aria-label="Change year"
-                          className="rounded-md px-0.5 font-display font-semibold text-ink underline decoration-pink decoration-dotted decoration-2 underline-offset-4 transition-colors hover:text-strawberry hover:decoration-strawberry focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink/40"
+                          className={headerLinkClass}
                         >
                           {viewDate.getFullYear()}
                         </button>
                       </p>
+                    ) : view === "months" ? (
+                      <button
+                        type="button"
+                        onClick={() => setView("years")}
+                        aria-label="Change year"
+                        className={headerLinkClass}
+                      >
+                        {viewDate.getFullYear()}
+                      </button>
                     ) : (
                       <button
                         type="button"
-                        onClick={() => setView("days")}
+                        onClick={() => setView("months")}
                         aria-label="Back to months"
-                        className="rounded-md px-1 font-display text-sm font-semibold text-strawberry underline decoration-pink decoration-dotted decoration-2 underline-offset-4 transition-colors hover:text-strawberry-deep focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink/40"
+                        className={headerLinkClass}
                       >
                         {yearStart} – {yearStart + 11}
                       </button>
@@ -259,7 +296,13 @@ export function DateField({
                     <button
                       type="button"
                       onClick={() => shiftRange(1)}
-                      aria-label={view === "years" ? "Next years" : "Next month"}
+                      aria-label={
+                        view === "years"
+                          ? "Next years"
+                          : view === "months"
+                            ? "Next year"
+                            : "Next month"
+                      }
                       className="grid h-7 w-7 place-items-center rounded-full text-ink-soft/60 transition-colors hover:bg-blush hover:text-strawberry"
                     >
                       <ChevronRight className="h-4 w-4" />
@@ -319,6 +362,29 @@ export function DateField({
                         })}
                       </div>
                     </>
+                  ) : view === "months" ? (
+                    <div className="mt-2 grid grid-cols-3 gap-1.5">
+                      {MEMORY_DATE_MONTHS.map((month, index) => {
+                        const isSelectedMonth = index === viewDate.getMonth();
+
+                        return (
+                          <button
+                            key={month}
+                            type="button"
+                            onClick={() => selectMonth(index)}
+                            aria-pressed={isSelectedMonth}
+                            className={cn(
+                              "grid h-9 place-items-center rounded-xl font-body text-[0.72rem] font-semibold transition-colors",
+                              isSelectedMonth
+                                ? "bg-strawberry text-white shadow-[0_4px_10px_-4px_rgba(241,91,114,0.8)]"
+                                : "text-ink hover:bg-blush hover:text-strawberry",
+                            )}
+                          >
+                            {month.slice(0, 3)}
+                          </button>
+                        );
+                      })}
+                    </div>
                   ) : (
                     <div className="mt-2 grid grid-cols-3 gap-1.5">
                       {yearCells.map((year) => {
@@ -346,7 +412,11 @@ export function DateField({
 
                   <div className="mt-2 flex items-center justify-between gap-2 border-t border-ink/5 pt-2">
                     <p className="font-hand text-[0.95rem] leading-none text-ink-soft/55">
-                      {view === "years" ? "jump to a year" : "pick a day to remember"}
+                      {view === "years"
+                        ? "jump to a year"
+                        : view === "months"
+                          ? "pick a month"
+                          : "pick a day to remember"}
                     </p>
                     <button
                       type="button"
