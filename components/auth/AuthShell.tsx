@@ -22,7 +22,7 @@ export function AuthShell({
 }) {
   return (
     <div className="relative min-h-dvh overflow-hidden px-4 py-10 sm:px-6 sm:py-16">
-      <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-0">
+      <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
         <div className="absolute -left-24 top-24 h-72 w-72 rounded-full bg-pink/20 blur-3xl" />
         <div className="absolute -right-20 bottom-16 h-80 w-80 rounded-full bg-lavender/25 blur-3xl" />
         <div className="absolute right-1/4 top-0 h-64 w-64 rounded-full bg-butter/20 blur-3xl" />

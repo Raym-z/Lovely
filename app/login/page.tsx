@@ -1,5 +1,7 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import { LoginForm } from "@/components/auth/LoginForm";
+import { LoadingScreen } from "@/components/lovely/LoadingScreen";
 import { getSupabasePublicConfig } from "@/lib/supabase-public-config";
 
 export const metadata: Metadata = {
@@ -11,10 +13,12 @@ export default function LoginPage() {
   const supabase = getSupabasePublicConfig();
 
   return (
-    <LoginForm
-      supabaseUrl={supabase.url}
-      supabaseKey={supabase.key}
-      turnstileSiteKey={supabase.turnstileSiteKey}
-    />
+    <Suspense fallback={<LoadingScreen message="Opening login..." />}>
+      <LoginForm
+        supabaseUrl={supabase.url}
+        supabaseKey={supabase.key}
+        turnstileSiteKey={supabase.turnstileSiteKey}
+      />
+    </Suspense>
   );
 }

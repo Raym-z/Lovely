@@ -10,6 +10,21 @@ import { MemoryCard } from "./MemoryCard";
 import { MemoryPhoto, type MemoryPhotoImage } from "./MemoryPhoto";
 import { JourneyFooter, SectionIntro, Sticker } from "./ui";
 
+const memoryNotes = [
+	"one of my favorites.",
+	"how lucky was that?",
+	"i still smile about this one.",
+	"worth every second.",
+	"my favorite kind of day.",
+	"we should do this again.",
+	"little moment, big feelings.",
+	"i keep this one close.",
+	"pure sunshine, honestly.",
+	"would relive this in a heartbeat.",
+	"this one lives in my heart.",
+	"some things just feel like home.",
+];
+
 function memoryImage(memory: Memory, imageMap: Record<string, MemoryPhotoImage>) {
 	if (memory.photoSource === "upload" && memory.photoImageId && imageMap[memory.photoImageId]) {
 		return imageMap[memory.photoImageId];
@@ -140,7 +155,7 @@ export function MemoryTimeline({ content, imageMap = {}, onContinue, onBack }: {
 									index % 2 === 0 ? "md:col-start-2 md:mt-0 md:justify-self-start md:pl-0 md:text-left" : "md:col-start-1 md:mt-0 md:row-start-1 md:justify-self-end md:pr-2 md:text-right",
 								)}
 							>
-								{index % 2 === 0 ? "one of my favorites." : "how lucky was that?"}
+								{memoryNotes[index % memoryNotes.length]}
 							</p>
 						</li>
 					))}

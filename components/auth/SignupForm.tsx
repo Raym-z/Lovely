@@ -9,6 +9,7 @@ import { AuthShell } from "./AuthShell";
 import { useGuestSession } from "./GuestSessionProvider";
 import { Field, TextInput } from "@/components/create/fields";
 import { friendlyAuthError } from "@/lib/auth-errors";
+import { safeAuthNext, withAuthNext } from "@/lib/auth-redirect";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -32,6 +33,7 @@ export function SignupForm({
   const searchParams = useSearchParams();
   const { user, isAnonymous, status } = useGuestSession();
   const completing = searchParams.get("complete") === "1";
+  const nextPath = safeAuthNext(searchParams.get("next"));
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -63,7 +65,7 @@ export function SignupForm({
       };
     }
 
-    router.replace("/account");
+    router.replace(nextPath ?? "/account");
     return { ok: true as const };
   }
 
@@ -103,7 +105,9 @@ export function SignupForm({
       const { error: emailUpdateError } = await supabase.auth.updateUser(
         { email: cleanedEmail },
         {
-          emailRedirectTo: `${window.location.origin}/signup?complete=1`,
+          emailRedirectTo: `${window.location.origin}/signup?complete=1${
+            nextPath ? `&next=${encodeURIComponent(nextPath)}` : ""
+          }`,
         },
       );
 
@@ -192,7 +196,7 @@ export function SignupForm({
           <>
             Already have an account?{" "}
             <Link
-              href="/login"
+              href={withAuthNext("/login", nextPath)}
               className="font-semibold text-strawberry transition-colors hover:text-strawberry-deep"
             >
               Log in
@@ -265,7 +269,7 @@ export function SignupForm({
         <>
           Already have an account?{" "}
           <Link
-            href="/login"
+            href={withAuthNext("/login", nextPath)}
             className="font-semibold text-strawberry transition-colors hover:text-strawberry-deep"
           >
             Log in

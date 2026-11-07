@@ -41,6 +41,7 @@ html {
 
 body {
   min-height: 100dvh;
+  overflow-x: clip;
   background-color: var(--color-cream);
   background-image:
     radial-gradient(circle at 8% 4%, rgba(255, 182, 201, 0.35), transparent 28%),

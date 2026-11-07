@@ -3,12 +3,13 @@
 import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowRight, Heart, RefreshCw } from "lucide-react";
 import { AuthShell } from "./AuthShell";
 import { TurnstileWidget } from "./TurnstileWidget";
 import { Field, TextInput } from "@/components/create/fields";
 import { friendlyAuthError } from "@/lib/auth-errors";
+import { safeAuthNext, withAuthNext } from "@/lib/auth-redirect";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -41,6 +42,8 @@ export function LoginForm({
   turnstileSiteKey: string;
 }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const nextPath = safeAuthNext(searchParams.get("next"));
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -60,11 +63,11 @@ export function LoginForm({
     if (transferStatus !== "success") return;
 
     const timeout = window.setTimeout(() => {
-      router.replace("/account");
+      router.replace(nextPath ?? "/account");
     }, 1600);
 
     return () => window.clearTimeout(timeout);
-  }, [router, transferStatus]);
+  }, [nextPath, router, transferStatus]);
 
   function getClient() {
     return getSupabaseBrowserClient({
@@ -119,7 +122,7 @@ export function LoginForm({
       }
 
       guestProofRef.current = null;
-      router.replace("/account");
+      router.replace(nextPath ?? "/account");
     } catch (transferFailure) {
       setTransferStatus("error");
       setTransferError(
@@ -224,7 +227,7 @@ export function LoginForm({
         return;
       }
 
-      router.replace("/account");
+      router.replace(nextPath ?? "/account");
     } finally {
       setLoading(false);
     }
@@ -251,7 +254,7 @@ export function LoginForm({
           <>
             New to Lovely?{" "}
             <Link
-              href="/signup"
+              href={withAuthNext("/signup", nextPath)}
               className="font-semibold text-strawberry transition-colors hover:text-strawberry-deep"
             >
               Create an account

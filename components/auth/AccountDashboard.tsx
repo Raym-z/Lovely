@@ -17,6 +17,11 @@ import { useGuestSession } from "./GuestSessionProvider";
 import { HeartShape, Squiggle } from "@/components/lovely/Doodles";
 import { LoadingScreen } from "@/components/lovely/LoadingScreen";
 import { Sticker } from "@/components/lovely/ui";
+import {
+  clearCreateDraft,
+  readCreateDraftSummary,
+  type CreateDraftSummary,
+} from "@/lib/create-draft";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 type OwnedPage = {
@@ -43,6 +48,17 @@ export function AccountDashboard({
   const [signingOut, setSigningOut] = useState(false);
   const [deletingUid, setDeletingUid] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [draft, setDraft] = useState<CreateDraftSummary | null>(() =>
+    readCreateDraftSummary(),
+  );
+
+  function discardDraft() {
+    if (!window.confirm("Discard the unfinished draft saved in this browser?")) {
+      return;
+    }
+    clearCreateDraft();
+    setDraft(null);
+  }
 
   useEffect(() => {
     if (status !== "ready" || !user) return;
@@ -188,7 +204,7 @@ export function AccountDashboard({
 
   return (
     <div className="relative min-h-dvh overflow-hidden">
-      <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-0">
+      <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
         <div className="absolute -left-24 top-24 h-72 w-72 rounded-full bg-pink/20 blur-3xl" />
         <div className="absolute -right-20 bottom-16 h-80 w-80 rounded-full bg-lavender/25 blur-3xl" />
       </div>
@@ -271,6 +287,42 @@ export function AccountDashboard({
         ) : null}
 
         <div className="mt-6">
+          {draft ? (
+            <div className="mb-3 flex flex-col items-start justify-between gap-4 rounded-2xl border-2 border-dashed border-lavender bg-lavender-soft/45 p-4 sm:flex-row sm:items-center">
+              <div className="min-w-0">
+                <p className="font-body text-[0.52rem] font-bold uppercase tracking-[0.12em] text-[#7b60b5]">
+                  Draft saved in this browser
+                </p>
+                <h2 className="mt-1 line-clamp-1 font-display text-lg font-semibold leading-tight text-ink">
+                  {draft.recipient
+                    ? `For ${draft.recipient}`
+                    : `From ${draft.sender}`}
+                </h2>
+                <p className="mt-1 line-clamp-2 font-body text-xs leading-relaxed text-ink-soft">
+                  {draft.tagline ||
+                    draft.title ||
+                    "Pick up where you left off."}
+                </p>
+              </div>
+              <div className="flex shrink-0 items-center gap-2">
+                <Link
+                  href="/create"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-strawberry px-4 py-2 font-display text-xs font-semibold text-white shadow-button transition-colors hover:bg-[#f56a80]"
+                >
+                  Continue draft
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </Link>
+                <button
+                  type="button"
+                  onClick={discardDraft}
+                  className="inline-flex items-center gap-1.5 rounded-full border-2 border-ink/10 bg-white px-3 py-2 font-body text-[0.56rem] font-bold uppercase tracking-[0.1em] text-ink-soft transition-colors hover:border-strawberry hover:text-strawberry"
+                >
+                  Discard
+                </button>
+              </div>
+            </div>
+          ) : null}
+
           {pages === null && !error ? (
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="h-36 animate-pulse rounded-2xl bg-white/60" />
@@ -304,7 +356,7 @@ export function AccountDashboard({
             </div>
           ) : null}
 
-          {pages && pages.length === 0 ? (
+          {pages && pages.length === 0 && !draft ? (
             <div className="rounded-[1.8rem] border-2 border-white bg-white/80 p-8 text-center shadow-card">
               <span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-pink-soft text-strawberry">
                 <Heart className="h-6 w-6" />

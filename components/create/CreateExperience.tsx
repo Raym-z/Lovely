@@ -12,9 +12,11 @@ import {
   Heart,
   HelpCircle,
   KeyRound,
+  LogIn,
   Mail,
   RotateCcw,
   Sparkles,
+  UserRound,
 } from "lucide-react";
 import {
   lovelyContent,
@@ -22,6 +24,7 @@ import {
   type SecretMessage,
 } from "@/content/lovely";
 import { cn } from "@/lib/cn";
+import { CREATE_DRAFT_KEY } from "@/lib/create-draft";
 import { useHydrated } from "@/lib/use-hydrated";
 import {
   validateLovelyContent,
@@ -45,8 +48,6 @@ import { ReviewStep } from "./steps/ReviewStep";
 import { LivePreview } from "./LivePreview";
 import { Field, TextInput } from "./fields";
 import type { LetterSectionId } from "./letter-sections";
-
-const DRAFT_KEY = "lovely.create.draft.v2";
 
 const steps = [
   { id: "basics", label: "Basics", icon: Heart },
@@ -284,7 +285,7 @@ export default function CreateExperience() {
     if (typeof window === "undefined" || editUid) return createStarterContent();
 
     try {
-      const raw = window.localStorage.getItem(DRAFT_KEY);
+      const raw = window.localStorage.getItem(CREATE_DRAFT_KEY);
       if (raw) {
         const parsed: unknown = JSON.parse(raw);
         const draft = normalizeDraftContent(parsed);
@@ -478,7 +479,7 @@ export default function CreateExperience() {
   useEffect(() => {
     if (!hydrated || editUid || loadState !== "ready") return;
     try {
-      window.localStorage.setItem(DRAFT_KEY, JSON.stringify(content));
+      window.localStorage.setItem(CREATE_DRAFT_KEY, JSON.stringify(content));
     } catch {
       // The editor still works without a draft.
     }
@@ -575,7 +576,7 @@ export default function CreateExperience() {
     setIssues([]);
     setSaveError(null);
     try {
-      window.localStorage.removeItem(DRAFT_KEY);
+      window.localStorage.removeItem(CREATE_DRAFT_KEY);
     } catch {
       // Ignore.
     }
@@ -671,7 +672,7 @@ export default function CreateExperience() {
           `lovely.edit.${data.uid}`,
           data.editKey,
         );
-        window.localStorage.removeItem(DRAFT_KEY);
+        window.localStorage.removeItem(CREATE_DRAFT_KEY);
       } catch {
         // The recovery key is still shown on the success screen.
       }
@@ -738,7 +739,7 @@ export default function CreateExperience() {
     setSaveError(null);
     setCopied(null);
     try {
-      window.localStorage.removeItem(DRAFT_KEY);
+      window.localStorage.removeItem(CREATE_DRAFT_KEY);
     } catch {
       // Ignore.
     }
@@ -797,7 +798,7 @@ export default function CreateExperience() {
       <div className="relative min-h-dvh overflow-hidden">
         <div
           aria-hidden="true"
-          className="pointer-events-none fixed inset-0 z-0"
+          className="pointer-events-none fixed inset-0 z-0 overflow-hidden"
         >
           <div className="absolute -left-24 top-24 h-72 w-72 rounded-full bg-pink/20 blur-3xl" />
           <div className="absolute -right-20 bottom-16 h-80 w-80 rounded-full bg-lavender/25 blur-3xl" />
@@ -1015,14 +1016,17 @@ export default function CreateExperience() {
     configuredOrigin ||
     (typeof window !== "undefined" ? window.location.origin : "");
   const editShareUrl = editUid ? `${shareOrigin}/${editUid}` : null;
+  const loginHref = `/login?next=${encodeURIComponent(
+    editUid ? `/create?edit=${editUid}` : "/create",
+  )}`;
 
   const stepIndex = steps.findIndex((item) => item.id === step);
   const isLast = step === "review";
   const nextStep = nextFrom(step);
 
   return (
-    <div className="relative min-h-dvh">
-      <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-0">
+    <div className="relative min-h-dvh overflow-x-clip">
+      <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
         <div className="absolute -left-28 top-24 h-80 w-80 rounded-full bg-pink/20 blur-3xl" />
         <div className="absolute -right-24 top-1/3 h-96 w-96 rounded-full bg-lavender/20 blur-3xl" />
         <div className="absolute bottom-0 left-1/3 h-72 w-72 rounded-full bg-butter/20 blur-3xl" />
@@ -1054,6 +1058,23 @@ export default function CreateExperience() {
             >
               View demo
             </Link>
+            {user && !isAnonymous ? (
+              <Link
+                href="/account"
+                className="inline-flex items-center gap-1.5 rounded-full border-2 border-pink-soft bg-white/70 px-4 py-2 font-body text-[0.6rem] font-bold uppercase tracking-[0.12em] text-strawberry transition-colors hover:border-pink hover:bg-blush"
+              >
+                <UserRound className="h-3 w-3" />
+                Account
+              </Link>
+            ) : (
+              <Link
+                href={loginHref}
+                className="inline-flex items-center gap-1.5 rounded-full border-2 border-pink-soft bg-white/70 px-4 py-2 font-body text-[0.6rem] font-bold uppercase tracking-[0.12em] text-strawberry transition-colors hover:border-pink hover:bg-blush"
+              >
+                <LogIn className="h-3 w-3" />
+                Log in
+              </Link>
+            )}
           </div>
         </div>
       </header>

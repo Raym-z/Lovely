@@ -21,7 +21,7 @@ function MessageScreen({
     <main className="relative flex min-h-dvh flex-col items-center justify-center overflow-hidden px-6 text-center">
       <div
         aria-hidden="true"
-        className="pointer-events-none fixed inset-0 -z-10"
+        className="pointer-events-none fixed inset-0 -z-10 overflow-hidden"
       >
         <div className="absolute -left-24 top-24 h-72 w-72 rounded-full bg-pink/20 blur-3xl" />
         <div className="absolute -right-20 bottom-16 h-80 w-80 rounded-full bg-lavender/25 blur-3xl" />
