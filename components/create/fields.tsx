@@ -34,7 +34,7 @@ import { makeId } from "@/lib/ids";
 import { useHydrated } from "@/lib/use-hydrated";
 import { HeartShape } from "@/components/lovely/Doodles";
 
-const inputClasses =
+export const inputClasses =
   "w-full rounded-xl border-2 border-ink/10 bg-white px-3.5 py-2.5 font-body text-sm text-ink outline-none transition-colors placeholder:text-ink-soft/35 focus:border-pink focus:bg-white aria-invalid:border-strawberry aria-invalid:bg-blush/30";
 
 export function Field({

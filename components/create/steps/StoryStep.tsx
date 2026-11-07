@@ -5,6 +5,8 @@ import type { LovelyContent, Memory } from "@/content/lovely";
 import type { LovelyImage } from "@/lib/image-types";
 import { cn } from "@/lib/cn";
 import { makeId } from "@/lib/ids";
+import { todayMemoryDate } from "@/lib/memory-date";
+import { DateField } from "../DateField";
 import { AddButton, CollapsibleCard, EditorCard, Field, OptionPicker, TextArea, TextInput } from "../fields";
 import { MemoryPhotoField, MemoryPhotoSourceToggle } from "../MemoryPhotoField";
 import { accentOptions } from "../options";
@@ -62,7 +64,7 @@ export function StoryStep({
 					...previous.memories,
 					{
 						id,
-						date: "A day to remember",
+						date: todayMemoryDate(),
 						title: "A new little memory",
 						excerpt: "Replace this with something only the two of you know.",
 						detail: "Add the tiny detail you never want to forget — the song, the weather, the look on their face.",
@@ -96,7 +98,7 @@ export function StoryStep({
 						>
 							<div className='grid gap-4 sm:grid-cols-2'>
 								<Field label='Date' required>
-									<TextInput value={memory.date} onChange={(event) => updateMemory(index, { date: event.target.value })} maxLength={80} />
+									<DateField value={memory.date} onChange={(date) => updateMemory(index, { date })} />
 								</Field>
 								<Field label='Title' required>
 									<TextInput value={memory.title} onChange={(event) => updateMemory(index, { title: event.target.value })} maxLength={120} />

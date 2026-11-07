@@ -27,8 +27,9 @@ export function BasicsStep({
 			const target = trimmed.length >= 2 ? value : placeholder;
 
 			if (source === target) return next;
-			const replaced = replaceNameDeep(next, source, target);
-			return { ...replaced, [field]: value };
+			const { recipient, sender, ...replaceable } = next;
+			const replaced = replaceNameDeep(replaceable, source, target);
+			return { ...replaced, recipient, sender, [field]: value };
 		});
 	}
 
@@ -47,6 +48,9 @@ export function BasicsStep({
 						<Field label='Their name' hint='The person receiving this little world.' required>
 							<TextInput
 								id='basics-recipient-name'
+								name='recipient-name'
+								autoComplete='off'
+								enterKeyHint='next'
 								value={content.recipient}
 								onChange={(event) => updateName("recipient", event.target.value)}
 								placeholder=''
@@ -65,6 +69,9 @@ export function BasicsStep({
 						<Field label='Your name' hint='The one sealing the envelope.' required>
 							<TextInput
 								id='basics-sender-name'
+								name='sender-name'
+								autoComplete='off'
+								enterKeyHint='done'
 								value={content.sender}
 								onChange={(event) => updateName("sender", event.target.value)}
 								placeholder=''
