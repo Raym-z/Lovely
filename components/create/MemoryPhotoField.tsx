@@ -24,6 +24,43 @@ const scenePickerOptions = photoOptions.map((option) => ({
   ),
 }));
 
+export function MemoryPhotoSourceToggle({
+  source,
+  onChange,
+}: {
+  source: "template" | "upload";
+  onChange: (source: "template" | "upload") => void;
+}) {
+  return (
+    <div className="inline-flex rounded-full border-2 border-white bg-white/60 p-1">
+      <button
+        type="button"
+        onClick={() => onChange("template")}
+        className={cn(
+          "rounded-full px-3.5 py-2 font-body text-[0.58rem] font-bold uppercase tracking-[0.1em] transition-colors",
+          source === "template"
+            ? "bg-strawberry text-white"
+            : "text-ink-soft hover:bg-blush hover:text-strawberry",
+        )}
+      >
+        Use a template
+      </button>
+      <button
+        type="button"
+        onClick={() => onChange("upload")}
+        className={cn(
+          "rounded-full px-3.5 py-2 font-body text-[0.58rem] font-bold uppercase tracking-[0.1em] transition-colors",
+          source === "upload"
+            ? "bg-strawberry text-white"
+            : "text-ink-soft hover:bg-blush hover:text-strawberry",
+        )}
+      >
+        Upload your photo
+      </button>
+    </div>
+  );
+}
+
 export function MemoryPhotoField({
   memory,
   pageId,
@@ -68,14 +105,6 @@ export function MemoryPhotoField({
     }
     setFile(nextFile);
     setUploadProgress(0);
-  }
-
-  function useTemplate() {
-    onPatch({ photoSource: "template" });
-  }
-
-  function useUpload() {
-    onPatch({ photoSource: "upload" });
   }
 
   function removeFromStory() {
@@ -165,33 +194,6 @@ export function MemoryPhotoField({
 
   return (
     <div className="space-y-3">
-      <div className="inline-flex rounded-full border-2 border-white bg-white/60 p-1">
-        <button
-          type="button"
-          onClick={useTemplate}
-          className={cn(
-            "rounded-full px-3.5 py-2 font-body text-[0.58rem] font-bold uppercase tracking-[0.1em] transition-colors",
-            source === "template"
-              ? "bg-strawberry text-white"
-              : "text-ink-soft hover:bg-blush hover:text-strawberry",
-          )}
-        >
-          Use a template
-        </button>
-        <button
-          type="button"
-          onClick={useUpload}
-          className={cn(
-            "rounded-full px-3.5 py-2 font-body text-[0.58rem] font-bold uppercase tracking-[0.1em] transition-colors",
-            source === "upload"
-              ? "bg-strawberry text-white"
-              : "text-ink-soft hover:bg-blush hover:text-strawberry",
-          )}
-        >
-          Upload your photo
-        </button>
-      </div>
-
       {source === "template" ? (
         <div>
           <p className="mb-1.5 font-body text-[0.64rem] font-bold uppercase tracking-[0.14em] text-ink-soft/75">

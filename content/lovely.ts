@@ -38,6 +38,7 @@ export interface Memory {
   title: string;
   excerpt: string;
   caption?: string;
+  memoryNote?: string;
   detail: string;
   photo: PhotoVariant;
   photoSource?: MemoryPhotoSource;

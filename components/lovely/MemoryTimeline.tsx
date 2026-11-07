@@ -12,16 +12,16 @@ import { JourneyFooter, SectionIntro, Sticker } from "./ui";
 
 const memoryNotes = [
 	"one of my favorites.",
-	"how lucky was that?",
+	"this one lives in my heart.",
 	"i still smile about this one.",
 	"worth every second.",
 	"my favorite kind of day.",
+	"i keep this one close.",
 	"we should do this again.",
 	"little moment, big feelings.",
-	"i keep this one close.",
 	"pure sunshine, honestly.",
 	"would relive this in a heartbeat.",
-	"this one lives in my heart.",
+	"how lucky was that?",
 	"some things just feel like home.",
 ];
 
@@ -71,9 +71,7 @@ function MemoryDetail({ memory, image, onClose }: { memory: Memory; image?: Memo
 						{memory.title}
 					</h3>
 
-					<p className='mt-1.5 text-pretty font-hand text-base leading-snug text-strawberry sm:text-lg'>
-						{memory.excerpt}
-					</p>
+					<p className='mt-1.5 text-pretty font-hand text-base leading-snug text-strawberry sm:text-lg'>{memory.excerpt}</p>
 
 					<div className='relative mt-2.5 rounded-lg border-2 border-dashed border-pink bg-blush/60 p-2.5 sm:p-3'>
 						<HeartShape className='absolute -right-2 -top-2 h-4 w-4 rotate-12 text-pink' />
@@ -155,7 +153,7 @@ export function MemoryTimeline({ content, imageMap = {}, onContinue, onBack }: {
 									index % 2 === 0 ? "md:col-start-2 md:mt-0 md:justify-self-start md:pl-0 md:text-left" : "md:col-start-1 md:mt-0 md:row-start-1 md:justify-self-end md:pr-2 md:text-right",
 								)}
 							>
-								{memoryNotes[index % memoryNotes.length]}
+								{memory.memoryNote?.trim() || memoryNotes[index % memoryNotes.length]}
 							</p>
 						</li>
 					))}
