@@ -17,6 +17,7 @@ export default function VerifyEmailPage() {
       <EmailVerificationPending
         supabaseUrl={supabase.url}
         supabaseKey={supabase.key}
+        turnstileSiteKey={supabase.turnstileSiteKey}
       />
     </Suspense>
   );

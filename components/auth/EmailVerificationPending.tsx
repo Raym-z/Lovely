@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Check, Heart, Mail, RefreshCw } from "lucide-react";
 import { AuthShell } from "./AuthShell";
+import { TurnstileWidget } from "./TurnstileWidget";
 import { friendlyAuthError } from "@/lib/auth-errors";
 import {
   getResendAvailableAt,
@@ -22,9 +23,11 @@ import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 export function EmailVerificationPending({
   supabaseUrl,
   supabaseKey,
+  turnstileSiteKey,
 }: {
   supabaseUrl: string;
   supabaseKey: string;
+  turnstileSiteKey: string;
 }) {
   const router = useRouter();
   const hydrated = useHydrated();
@@ -40,6 +43,9 @@ export function EmailVerificationPending({
   const [resending, setResending] = useState(false);
   const [resendError, setResendError] = useState<string | null>(null);
   const [resendSuccess, setResendSuccess] = useState<string | null>(null);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaKey, setCaptchaKey] = useState(0);
+  const [captchaError, setCaptchaError] = useState<string | null>(null);
 
   useEffect(() => {
     const remaining = availableAt - now;
@@ -80,8 +86,20 @@ export function EmailVerificationPending({
 
   const waitSeconds = Math.max(0, Math.ceil((availableAt - now) / 1000));
 
+  function resetCaptcha() {
+    setCaptchaToken(null);
+    setCaptchaKey((current) => current + 1);
+  }
+
   async function resend() {
-    if (resending || !email) return;
+    if (
+      resending ||
+      !email ||
+      waitSeconds > 0 ||
+      (turnstileSiteKey && !captchaToken)
+    ) {
+      return;
+    }
 
     const supabase = getSupabaseBrowserClient({
       url: supabaseUrl,
@@ -96,7 +114,14 @@ export function EmailVerificationPending({
     setResendError(null);
     setResendSuccess(null);
 
-    const result = await resendVerificationEmail(supabase, email, nextPath);
+    const result = await resendVerificationEmail(
+      supabase,
+      email,
+      nextPath,
+      captchaToken,
+    );
+
+    resetCaptcha();
 
     if (result.ok) {
       const nextAvailableAt = Date.now() + RESEND_COOLDOWN_MS;
@@ -110,10 +135,13 @@ export function EmailVerificationPending({
       const message = result.message ?? friendlyAuthError(undefined);
       setResendError(message);
 
-      if (
-        message.toLowerCase().includes("too many") ||
-        message.toLowerCase().includes("wait")
-      ) {
+      if (result.captchaFailed) {
+        setCaptchaError(
+          "Complete the verification check again, then retry the resend.",
+        );
+      }
+
+      if (result.rateLimited) {
         const nextAvailableAt = Date.now() + RESEND_COOLDOWN_MS;
         setAvailableAt(nextAvailableAt);
         setNow(Date.now());
@@ -186,10 +214,69 @@ export function EmailVerificationPending({
           </p>
         ) : null}
 
+        {turnstileSiteKey ? (
+          <div className="space-y-2">
+            <div className="flex justify-center">
+              <TurnstileWidget
+                key={captchaKey}
+                siteKey={turnstileSiteKey}
+                appearance="always"
+                onToken={(token) => {
+                  setCaptchaToken(token);
+                  setCaptchaError(null);
+                }}
+                onExpire={() => {
+                  setCaptchaToken(null);
+                  setCaptchaKey((current) => current + 1);
+                }}
+                onError={() => {
+                  setCaptchaToken(null);
+                  setCaptchaError(
+                    "Cloudflare verification could not load. Try the check again.",
+                  );
+                }}
+              />
+            </div>
+
+            {!captchaToken && !captchaError ? (
+              <p className="text-center font-hand text-base leading-tight text-ink-soft/60">
+                Complete the verification check to enable resending.
+              </p>
+            ) : null}
+
+            {captchaError ? (
+              <div className="space-y-2 text-center">
+                <p
+                  role="alert"
+                  className="font-body text-xs leading-relaxed text-[#7d4250]"
+                >
+                  {captchaError}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCaptchaError(null);
+                    resetCaptcha();
+                  }}
+                  className="rounded-full border-2 border-pink-soft bg-white px-4 py-2 font-body text-[0.58rem] font-bold uppercase tracking-[0.12em] text-strawberry transition-colors hover:border-pink hover:bg-blush"
+                >
+                  Try verification again
+                </button>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+
         <button
           type="button"
           onClick={() => void resend()}
-          disabled={resending || waitSeconds > 0 || !email}
+          disabled={
+            resending ||
+            waitSeconds > 0 ||
+            !email ||
+            Boolean(captchaError) ||
+            Boolean(turnstileSiteKey && !captchaToken)
+          }
           className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-strawberry px-6 py-3 font-display text-sm font-semibold text-white shadow-button transition-colors hover:bg-[#f56a80] disabled:cursor-not-allowed disabled:opacity-60"
         >
           {resending ? (

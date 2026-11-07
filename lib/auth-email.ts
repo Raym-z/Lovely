@@ -135,44 +135,64 @@ function isRateLimitError(message: string) {
   return normalized.includes("rate limit") || normalized.includes("too many");
 }
 
+function isCaptchaError(message: string) {
+  const normalized = message.toLowerCase();
+  return (
+    normalized.includes("captcha") ||
+    normalized.includes("no captcha_token") ||
+    normalized.includes("request disallowed")
+  );
+}
+
+export type ResendVerificationResult =
+  | { ok: true }
+  | {
+      ok: false;
+      message: string;
+      captchaFailed?: boolean;
+      rateLimited?: boolean;
+    };
+
 export async function resendVerificationEmail(
   supabase: SupabaseClient,
   email: string,
   nextPath: string | null,
-) {
+  captchaToken: string | null,
+): Promise<ResendVerificationResult> {
   const emailRedirectTo = buildAuthRedirectUrl(nextPath);
 
-  const emailChange = await supabase.auth.resend({
+  const { error } = await supabase.auth.resend({
     type: "email_change",
     email,
-    options: { emailRedirectTo },
+    options: {
+      emailRedirectTo,
+      ...(captchaToken ? { captchaToken } : {}),
+    },
   });
 
-  if (!emailChange.error) {
-    return { ok: true as const };
+  if (!error) {
+    return { ok: true };
   }
 
-  if (isRateLimitError(emailChange.error.message)) {
+  if (isCaptchaError(error.message)) {
     return {
-      ok: false as const,
-      message: friendlyAuthError(emailChange.error.message),
+      ok: false,
+      message:
+        "The verification check expired or was not accepted. Complete it again and retry.",
+      captchaFailed: true,
     };
   }
 
-  const signup = await supabase.auth.resend({
-    type: "signup",
-    email,
-    options: { emailRedirectTo },
-  });
-
-  if (!signup.error) {
-    return { ok: true as const };
+  if (isRateLimitError(error.message)) {
+    return {
+      ok: false,
+      message: friendlyAuthError(error.message),
+      rateLimited: true,
+    };
   }
 
   return {
-    ok: false as const,
-    message: isRateLimitError(signup.error.message)
-      ? friendlyAuthError(signup.error.message)
-      : "We couldn't resend the confirmation email right now. Wait a moment and try again.",
+    ok: false,
+    message: "We couldn't resend the confirmation email right now. Wait a moment and try again.",
   };
 }

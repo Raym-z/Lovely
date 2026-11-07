@@ -66,11 +66,13 @@ export function TurnstileWidget({
   onToken,
   onExpire,
   onError,
+  appearance = "interaction-only",
 }: {
   siteKey: string;
   onToken: (token: string) => void;
   onExpire: () => void;
   onError: () => void;
+  appearance?: "always" | "interaction-only" | "execute";
 }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const onTokenRef = useRef(onToken);
@@ -99,7 +101,7 @@ export function TurnstileWidget({
           sitekey: siteKey,
           theme: "light",
           size: "normal",
-          appearance: "interaction-only",
+          appearance,
           callback: (token: string) => onTokenRef.current(token),
           "expired-callback": () => onExpireRef.current(),
           "timeout-callback": () => onExpireRef.current(),
@@ -116,7 +118,7 @@ export function TurnstileWidget({
         api.remove(widgetId);
       }
     };
-  }, [siteKey]);
+  }, [appearance, siteKey]);
 
   return <div ref={containerRef} />;
 }

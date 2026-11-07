@@ -94,17 +94,6 @@ export function SignupForm({
       return;
     }
 
-    const passwordIssue = passwordError(password);
-    if (passwordIssue) {
-      setError(passwordIssue);
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      setError("Those passwords do not match yet.");
-      return;
-    }
-
     const supabase = getClient();
     if (!supabase) {
       setError("Accounts are not configured right now.");
@@ -126,16 +115,7 @@ export function SignupForm({
 
       rememberPendingVerification(cleanedEmail, nextPath);
       markVerificationSent();
-
-      const { error: passwordUpdateError } = await supabase.auth.updateUser({
-        password,
-      });
-
-      if (passwordUpdateError) {
-        markPasswordPending();
-      } else {
-        clearPasswordPending();
-      }
+      markPasswordPending();
 
       router.replace(withAuthNext("/verify-email", nextPath));
     } finally {
@@ -280,7 +260,7 @@ export function SignupForm({
       description={
         completing
           ? "Your email is confirmed. Choose a password so you can log in from any device."
-          : "Your guest page and all its details stay right where they are. You're only adding a way to come back to them."
+          : "We'll email you a confirmation link first. Once confirmed, you'll choose your password and your guest page comes with you."
       }
       footer={
         <>
@@ -311,31 +291,35 @@ export function SignupForm({
           </Field>
         )}
 
-        <Field
-          label={completing ? "New password" : "Password"}
-          hint="At least 8 characters with a letter and a number."
-          required
-        >
-          <TextInput
-            type="password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            autoComplete="new-password"
-            placeholder="Choose a password"
-            maxLength={200}
-          />
-        </Field>
+        {completing ? (
+          <>
+            <Field
+              label="New password"
+              hint="At least 8 characters with a letter and a number."
+              required
+            >
+              <TextInput
+                type="password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                autoComplete="new-password"
+                placeholder="Choose a password"
+                maxLength={200}
+              />
+            </Field>
 
-        <Field label="Confirm password" required>
-          <TextInput
-            type="password"
-            value={confirmPassword}
-            onChange={(event) => setConfirmPassword(event.target.value)}
-            autoComplete="new-password"
-            placeholder="Type it once more"
-            maxLength={200}
-          />
-        </Field>
+            <Field label="Confirm password" required>
+              <TextInput
+                type="password"
+                value={confirmPassword}
+                onChange={(event) => setConfirmPassword(event.target.value)}
+                autoComplete="new-password"
+                placeholder="Type it once more"
+                maxLength={200}
+              />
+            </Field>
+          </>
+        ) : null}
 
         {error ? (
           <p
@@ -355,7 +339,7 @@ export function SignupForm({
             ? "Saving..."
             : completing
               ? "Finish account"
-              : "Create free account"}
+              : "Send confirmation link"}
           {loading ? null : <ArrowRight className="h-4 w-4" />}
         </button>
       </form>
