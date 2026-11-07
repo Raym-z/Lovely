@@ -1019,7 +1019,6 @@ export default function CreateExperience() {
   const stepIndex = steps.findIndex((item) => item.id === step);
   const isLast = step === "review";
   const nextStep = nextFrom(step);
-  const nextStepLabel = steps.find((item) => item.id === nextStep)?.label;
 
   return (
     <div className="relative min-h-dvh">
@@ -1250,15 +1249,21 @@ export default function CreateExperience() {
           </aside>
         </div>
 
-        <div className="mt-8 flex flex-col-reverse items-center justify-between gap-3 rounded-[1.5rem] border-2 border-white bg-white/60 p-4 sm:flex-row">
-          <GhostButton
-            onClick={() => goToStep(previousFrom(step))}
-            className={cn(stepIndex === 0 && "invisible")}
-          >
-            Back
-          </GhostButton>
+        <div className="mt-8 grid grid-cols-[1fr_auto_1fr] items-center gap-3 rounded-[1.5rem] border-2 border-white bg-white/60 p-4">
+          <div className="justify-self-start">
+            <GhostButton
+              onClick={() => goToStep(previousFrom(step))}
+              className={cn(stepIndex === 0 && "invisible")}
+            >
+              Back
+            </GhostButton>
+          </div>
 
-          <div className="flex flex-col items-center gap-2">
+          <p className="font-hand text-base text-ink-soft/55">
+            step {stepIndex + 1} of {steps.length}
+          </p>
+
+          <div className="flex flex-col items-end gap-2 justify-self-end">
             {isLast ? (
               <>
                 <PrimaryButton
@@ -1274,21 +1279,20 @@ export default function CreateExperience() {
                       : "Create my Lovely"}
                   {saving ? null : <Heart className="h-4 w-4" />}
                 </PrimaryButton>
-                <p className="font-hand text-base text-ink-soft/55">
+                <p className="text-right font-hand text-base text-ink-soft/55">
                   {editUid
                     ? "your share link stays the same"
                     : "you'll get a short link to send"}
                 </p>
               </>
             ) : (
-              <>
-                <PrimaryButton onClick={() => goToStep(nextStep)}>
-                  Next: {nextStepLabel}
-                </PrimaryButton>
-                <p className="font-hand text-base text-ink-soft/55">
-                  step {stepIndex + 1} of {steps.length}
-                </p>
-              </>
+              <GhostButton
+                onClick={() => goToStep(nextStep)}
+                iconSide='right'
+                tone='strawberry'
+              >
+                Next
+              </GhostButton>
             )}
           </div>
         </div>
