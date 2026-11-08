@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowRight, Heart } from "lucide-react";
 import { AuthShell } from "./AuthShell";
+import { TurnstileWidget } from "./TurnstileWidget";
 import { useGuestSession } from "./GuestSessionProvider";
 import { Field, TextInput } from "@/components/create/fields";
 import { friendlyAuthError } from "@/lib/auth-errors";
@@ -13,9 +14,11 @@ import {
   buildAuthRedirectUrl,
   clearPasswordPending,
   clearPendingVerification,
+  createVerificationWatchToken,
   markVerificationSent,
   rememberPendingVerification,
 } from "@/lib/auth-email";
+import { rememberPendingSignupCredentials } from "@/lib/pending-signup-credentials";
 import { safeAuthNext, withAuthNext } from "@/lib/auth-redirect";
 import { isRegisteredUnverified } from "@/lib/auth-verification";
 import { LoadingScreen } from "@/components/lovely/LoadingScreen";
@@ -34,9 +37,11 @@ function passwordError(password: string) {
 export function SignupForm({
   supabaseUrl,
   supabaseKey,
+  turnstileSiteKey,
 }: {
   supabaseUrl: string;
   supabaseKey: string;
+  turnstileSiteKey: string;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -48,7 +53,11 @@ export function SignupForm({
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaKey, setCaptchaKey] = useState(0);
+  const [captchaError, setCaptchaError] = useState<string | null>(null);
   const needsEmailVerification = isRegisteredUnverified(user);
+  const isStandalone = !user;
 
   useEffect(() => {
     if (needsEmailVerification && !completing) {
@@ -58,6 +67,15 @@ export function SignupForm({
 
   function getClient() {
     return getSupabaseBrowserClient({ url: supabaseUrl, key: supabaseKey });
+  }
+
+  function resetCaptcha() {
+    setCaptchaToken(null);
+    setCaptchaKey((current) => current + 1);
+  }
+
+  function duplicateEmailMessage() {
+    return "If that email can be used, a confirmation link is on its way. If you already have an account, log in instead.";
   }
 
   async function finishPassword(
@@ -104,6 +122,11 @@ export function SignupForm({
       return;
     }
 
+    if (isStandalone && turnstileSiteKey && !captchaToken) {
+      setError("Complete the verification check before creating your account.");
+      return;
+    }
+
     const supabase = getClient();
     if (!supabase) {
       setError("Accounts are not configured right now.");
@@ -113,8 +136,73 @@ export function SignupForm({
     setLoading(true);
 
     try {
-      const { error: updateError } = await supabase.auth.updateUser(
-        { email: cleanedEmail, password },
+      const watchToken = createVerificationWatchToken();
+
+      if (isStandalone) {
+        const { data, error: signUpError } = await supabase.auth.signUp({
+          email: cleanedEmail,
+          password,
+          options: {
+            emailRedirectTo: buildAuthRedirectUrl(nextPath),
+            ...(captchaToken ? { captchaToken } : {}),
+            ...(watchToken
+              ? { data: { lovely_email_watch: watchToken } }
+              : {}),
+          },
+        });
+
+        resetCaptcha();
+
+        if (signUpError) {
+          const normalized = signUpError.message.toLowerCase();
+          setError(
+            normalized.includes("already registered") ||
+              normalized.includes("already exists")
+              ? duplicateEmailMessage()
+              : friendlyAuthError(signUpError.message),
+          );
+          return;
+        }
+
+        if (!data.user) {
+          setError("The account could not be created. Please try again.");
+          return;
+        }
+
+        if ((data.user.identities?.length ?? 0) === 0) {
+          setError(duplicateEmailMessage());
+          return;
+        }
+
+        rememberPendingVerification(
+          cleanedEmail,
+          nextPath,
+          "signup",
+          watchToken
+            ? { userId: data.user.id, token: watchToken }
+            : undefined,
+        );
+        rememberPendingSignupCredentials(cleanedEmail, password);
+        markVerificationSent();
+        clearPasswordPending();
+
+        if (data.session?.user?.email_confirmed_at) {
+          router.replace(nextPath ?? "/account");
+          return;
+        }
+
+        router.replace(withAuthNext("/verify-email", nextPath));
+        return;
+      }
+
+      const { data, error: updateError } = await supabase.auth.updateUser(
+        {
+          email: cleanedEmail,
+          password,
+          ...(watchToken
+            ? { data: { lovely_email_watch: watchToken } }
+            : {}),
+        },
         { emailRedirectTo: buildAuthRedirectUrl(nextPath) },
       );
 
@@ -123,7 +211,16 @@ export function SignupForm({
         return;
       }
 
-      rememberPendingVerification(cleanedEmail, nextPath);
+      const watchUserId = data.user?.id ?? user?.id;
+      rememberPendingVerification(
+        cleanedEmail,
+        nextPath,
+        "email_change",
+        watchUserId && watchToken
+          ? { userId: watchUserId, token: watchToken }
+          : undefined,
+      );
+      rememberPendingSignupCredentials(cleanedEmail, password);
       markVerificationSent();
       clearPasswordPending();
 
@@ -183,53 +280,13 @@ export function SignupForm({
     );
   }
 
-  if (!user) {
-    return (
-      <AuthShell
-        eyebrow="Create an account"
-        title={
-          <>
-            Start with a <span className="text-strawberry">Lovely first.</span>
-          </>
-        }
-        description="Accounts are connected to the guest session that created your page. Make a Lovely, then create your account from its success screen."
-        footer={
-          <>
-            Already have an account?{" "}
-            <Link
-              href={withAuthNext("/login", nextPath)}
-              className="font-semibold text-strawberry transition-colors hover:text-strawberry-deep"
-            >
-              Log in
-            </Link>
-          </>
-        }
-      >
-        <div className="space-y-3 text-center">
-          <Link
-            href="/create"
-            className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-strawberry px-6 py-3 font-display text-sm font-semibold text-white shadow-button transition-colors hover:bg-[#f56a80]"
-          >
-            Make your Lovely
-            <ArrowRight className="h-4 w-4" />
-          </Link>
-          {status === "unavailable" || status === "error" ? (
-            <p className="font-body text-xs leading-relaxed text-ink-soft/70">
-              Account setup is unavailable right now. Your edit keys still work.
-            </p>
-          ) : null}
-        </div>
-      </AuthShell>
-    );
-  }
-
   if (needsEmailVerification && !completing) {
     return (
       <LoadingScreen message="Taking you to verify your email..." />
     );
   }
 
-  if (!isAnonymous && !completing) {
+  if (user && !isAnonymous && !completing) {
     return (
       <AuthShell
         eyebrow="You're already in"
@@ -270,7 +327,9 @@ export function SignupForm({
       description={
         completing
           ? "Your email is confirmed. Choose a password so you can log in from any device."
-          : "Your guest page and all its details stay right where they are. We'll email a confirmation link, then your account is official."
+          : isAnonymous
+            ? "Your guest page and all its details stay right where they are. We'll email a confirmation link, then your account is official."
+            : "Create your permanent account now. You can make your first Lovely whenever you're ready."
       }
       footer={
         <>
@@ -330,6 +389,59 @@ export function SignupForm({
           />
         </Field>
 
+        {isStandalone && turnstileSiteKey ? (
+          <div className="space-y-2">
+            <div className="flex justify-center">
+              <TurnstileWidget
+                key={captchaKey}
+                siteKey={turnstileSiteKey}
+                appearance="always"
+                onToken={(token) => {
+                  setCaptchaToken(token);
+                  setCaptchaError(null);
+                }}
+                onExpire={() => {
+                  setCaptchaToken(null);
+                  setCaptchaKey((current) => current + 1);
+                }}
+                onError={() => {
+                  setCaptchaToken(null);
+                  setCaptchaError(
+                    "Cloudflare verification could not load. Try the check again.",
+                  );
+                }}
+              />
+            </div>
+
+            {!captchaToken && !captchaError ? (
+              <p className="text-center font-hand text-base leading-tight text-ink-soft/60">
+                Complete the verification check to create your account.
+              </p>
+            ) : null}
+
+            {captchaError ? (
+              <div className="space-y-2 text-center">
+                <p
+                  role="alert"
+                  className="font-body text-xs leading-relaxed text-[#7d4250]"
+                >
+                  {captchaError}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCaptchaError(null);
+                    resetCaptcha();
+                  }}
+                  className="rounded-full border-2 border-pink-soft bg-white px-4 py-2 font-body text-[0.58rem] font-bold uppercase tracking-[0.12em] text-strawberry transition-colors hover:border-pink hover:bg-blush"
+                >
+                  Try verification again
+                </button>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+
         {error ? (
           <p
             role="alert"
@@ -339,16 +451,28 @@ export function SignupForm({
           </p>
         ) : null}
 
+        {status === "unavailable" || status === "error" ? (
+          <p className="font-body text-xs leading-relaxed text-ink-soft/70">
+            Account setup is unavailable right now. Please try again later.
+          </p>
+        ) : null}
+
         <button
           type="submit"
-          disabled={loading}
+          disabled={
+            loading ||
+            Boolean(isStandalone && captchaError) ||
+            Boolean(isStandalone && turnstileSiteKey && !captchaToken)
+          }
           className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-strawberry px-6 py-3 font-display text-sm font-semibold text-white shadow-button transition-colors hover:bg-[#f56a80] disabled:cursor-wait disabled:opacity-70"
         >
           {loading
             ? "Saving..."
             : completing
               ? "Finish account"
-              : "Create free account"}
+              : isStandalone
+                ? "Create free account"
+                : "Save my Lovely"}
           {loading ? null : <ArrowRight className="h-4 w-4" />}
         </button>
       </form>

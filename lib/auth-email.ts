@@ -7,21 +7,54 @@ const SENT_AT_KEY = "lovely.verify-email.sent-at.v1";
 
 export const RESEND_COOLDOWN_MS = 60_000;
 
+export type VerificationResendType = "email_change" | "signup";
+
+export type PendingVerificationWatch = {
+  userId: string;
+  token: string;
+};
+
 export type PendingVerification = {
   email: string;
   nextPath: string | null;
+  resendType: VerificationResendType;
+  watchUserId: string | null;
+  watchToken: string | null;
 };
+
+export function createVerificationWatchToken() {
+  if (
+    typeof crypto === "undefined" ||
+    typeof crypto.getRandomValues !== "function"
+  ) {
+    return "";
+  }
+
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join(
+    "",
+  );
+}
 
 export function rememberPendingVerification(
   email: string,
   nextPath: string | null,
+  resendType: VerificationResendType = "email_change",
+  watch?: PendingVerificationWatch,
 ) {
   if (typeof window === "undefined") return;
 
   try {
     window.sessionStorage.setItem(
       PENDING_VERIFICATION_KEY,
-      JSON.stringify({ email, nextPath } satisfies PendingVerification),
+      JSON.stringify({
+        email,
+        nextPath,
+        resendType,
+        watchUserId: watch?.userId ?? null,
+        watchToken: watch?.token ?? null,
+      } satisfies PendingVerification),
     );
   } catch {
     // The verification screen can still work from the URL or current session.
@@ -42,6 +75,11 @@ export function readPendingVerification(): PendingVerification | null {
         typeof parsed.nextPath === "string" && parsed.nextPath.startsWith("/")
           ? parsed.nextPath
           : null,
+      resendType: parsed.resendType === "signup" ? "signup" : "email_change",
+      watchUserId:
+        typeof parsed.watchUserId === "string" ? parsed.watchUserId : null,
+      watchToken:
+        typeof parsed.watchToken === "string" ? parsed.watchToken : null,
     };
   } catch {
     return null;
@@ -157,12 +195,13 @@ export async function resendVerificationEmail(
   supabase: SupabaseClient,
   email: string,
   nextPath: string | null,
+  resendType: VerificationResendType,
   captchaToken: string | null,
 ): Promise<ResendVerificationResult> {
   const emailRedirectTo = buildAuthRedirectUrl(nextPath);
 
   const { error } = await supabase.auth.resend({
-    type: "email_change",
+    type: resendType,
     email,
     options: {
       emailRedirectTo,

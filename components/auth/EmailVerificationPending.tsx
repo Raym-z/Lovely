@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Check, Heart, Mail, RefreshCw } from "lucide-react";
@@ -8,6 +8,8 @@ import { AuthShell } from "./AuthShell";
 import { TurnstileWidget } from "./TurnstileWidget";
 import { friendlyAuthError } from "@/lib/auth-errors";
 import {
+  clearPasswordPending,
+  clearPendingVerification,
   getResendAvailableAt,
   markVerificationSent,
   readPendingVerification,
@@ -16,6 +18,10 @@ import {
 } from "@/lib/auth-email";
 import { safeAuthNext, withAuthNext } from "@/lib/auth-redirect";
 import { isEmailVerified } from "@/lib/auth-verification";
+import {
+  clearPendingSignupCredentials,
+  readPendingSignupCredentials,
+} from "@/lib/pending-signup-credentials";
 import { LoadingScreen } from "@/components/lovely/LoadingScreen";
 import { useHydrated } from "@/lib/use-hydrated";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
@@ -33,6 +39,7 @@ export function EmailVerificationPending({
   const hydrated = useHydrated();
   const searchParams = useSearchParams();
   const [pending] = useState(() => readPendingVerification());
+  const resendType = pending?.resendType ?? "signup";
   const [email, setEmail] = useState(pending?.email ?? "");
   const nextPath =
     safeAuthNext(searchParams.get("next")) ?? pending?.nextPath ?? null;
@@ -46,6 +53,17 @@ export function EmailVerificationPending({
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [captchaKey, setCaptchaKey] = useState(0);
   const [captchaError, setCaptchaError] = useState<string | null>(null);
+  const [verified, setVerified] = useState(false);
+  const [finishing, setFinishing] = useState(false);
+  const [finishMessage, setFinishMessage] = useState<string | null>(null);
+  const [finishError, setFinishError] = useState<string | null>(null);
+  const [manualChecking, setManualChecking] = useState(false);
+  const [manualStatus, setManualStatus] = useState<string | null>(null);
+  const [authSignedOut, setAuthSignedOut] = useState(false);
+  const finishingRef = useRef(false);
+  const statusCheckRef = useRef(false);
+  const watchUserId = pending?.watchUserId ?? null;
+  const watchToken = pending?.watchToken ?? null;
 
   useEffect(() => {
     const remaining = availableAt - now;
@@ -86,9 +104,255 @@ export function EmailVerificationPending({
 
   const waitSeconds = Math.max(0, Math.ceil((availableAt - now) / 1000));
 
-  function resetCaptcha() {
+  const resetCaptcha = useCallback(() => {
     setCaptchaToken(null);
     setCaptchaKey((current) => current + 1);
+  }, []);
+
+  const queryVerificationStatus = useCallback(async () => {
+    if (statusCheckRef.current) {
+      return { verified: false, unsupported: false };
+    }
+
+    statusCheckRef.current = true;
+
+    try {
+      const supabase = getSupabaseBrowserClient({
+        url: supabaseUrl,
+        key: supabaseKey,
+      });
+
+      if (!supabase) {
+        return { verified: false, unsupported: true };
+      }
+
+      if (watchUserId && watchToken) {
+        try {
+          const response = await fetch("/api/auth/verification-status", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ userId: watchUserId, watchToken }),
+            cache: "no-store",
+          });
+
+          if (!response.ok) {
+            return { verified: false, unsupported: response.status === 404 };
+          }
+
+          const data = (await response.json().catch(() => ({}))) as {
+            verified?: unknown;
+          };
+          return { verified: data.verified === true, unsupported: false };
+        } catch {
+          return { verified: false, unsupported: false };
+        }
+      }
+
+      const { data, error } = await supabase.auth.getUser();
+      const user = data.user;
+
+      if (error || !user) {
+        return { verified: false, unsupported: true };
+      }
+
+      return {
+        verified: Boolean(!user.is_anonymous && isEmailVerified(user)),
+        unsupported: false,
+      };
+    } finally {
+      statusCheckRef.current = false;
+    }
+  }, [supabaseKey, supabaseUrl, watchToken, watchUserId]);
+
+  const finishVerified = useCallback(async () => {
+    if (finishingRef.current || authSignedOut) return;
+
+    const supabase = getSupabaseBrowserClient({
+      url: supabaseUrl,
+      key: supabaseKey,
+    });
+    if (!supabase) {
+      setFinishError("Accounts are not configured right now.");
+      return;
+    }
+
+    const { data: sessionData } = await supabase.auth.getSession();
+
+    if (sessionData.session) {
+      const { data: refreshed, error: refreshError } =
+        await supabase.auth.refreshSession();
+      const refreshedUser = refreshed.user ?? refreshed.session?.user;
+
+      if (
+        !refreshError &&
+        refreshedUser &&
+        !refreshedUser.is_anonymous &&
+        isEmailVerified(refreshedUser)
+      ) {
+        clearPendingVerification();
+        clearPasswordPending();
+        clearPendingSignupCredentials();
+        router.replace(nextPath ?? "/account");
+        return;
+      }
+
+      const { data: userData } = await supabase.auth.getUser();
+      if (
+        userData.user &&
+        !userData.user.is_anonymous &&
+        isEmailVerified(userData.user)
+      ) {
+        clearPendingVerification();
+        clearPasswordPending();
+        clearPendingSignupCredentials();
+        router.replace(nextPath ?? "/account");
+        return;
+      }
+    }
+
+    const credentials = readPendingSignupCredentials();
+    if (!credentials) {
+      setFinishError(
+        "Your email is verified. Log in with your email and password to continue.",
+      );
+      return;
+    }
+
+    if (turnstileSiteKey && !captchaToken) {
+      setFinishMessage(
+        "Email verified! Complete the verification check to finish automatically.",
+      );
+      return;
+    }
+
+    finishingRef.current = true;
+    setFinishing(true);
+    setFinishError(null);
+    setFinishMessage(null);
+
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: credentials.email,
+        password: credentials.password,
+        options:
+          turnstileSiteKey && captchaToken
+            ? { captchaToken }
+            : undefined,
+      });
+
+      resetCaptcha();
+
+      if (!error) {
+        clearPendingVerification();
+        clearPasswordPending();
+        clearPendingSignupCredentials();
+        router.replace(nextPath ?? "/account");
+        return;
+      }
+
+      const normalized = error.message.toLowerCase();
+
+      if (normalized.includes("captcha")) {
+        resetCaptcha();
+        setFinishMessage(
+          "Email verified! Complete the verification check to finish automatically.",
+        );
+        return;
+      }
+
+      if (normalized.includes("email not confirmed")) {
+        setVerified(false);
+        setFinishMessage(
+          "Email verified! Supabase is still catching up, so we'll keep checking automatically.",
+        );
+        return;
+      }
+
+      setFinishError(friendlyAuthError(error.message));
+    } finally {
+      finishingRef.current = false;
+      setFinishing(false);
+    }
+  }, [
+    authSignedOut,
+    captchaToken,
+    nextPath,
+    resetCaptcha,
+    router,
+    supabaseKey,
+    supabaseUrl,
+    turnstileSiteKey,
+  ]);
+
+  useEffect(() => {
+    const supabase = getSupabaseBrowserClient({
+      url: supabaseUrl,
+      key: supabaseKey,
+    });
+    if (!supabase) return;
+
+    const { data } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_OUT") setAuthSignedOut(true);
+    });
+
+    return () => data.subscription.unsubscribe();
+  }, [supabaseKey, supabaseUrl]);
+
+  useEffect(() => {
+    if (!hydrated || verified || authSignedOut) return;
+
+    let active = true;
+    const interval = window.setInterval(() => {
+      void queryVerificationStatus().then((result) => {
+        if (!active || !result.verified) return;
+        active = false;
+        setVerified(true);
+      });
+    }, 5000);
+
+    void queryVerificationStatus().then((result) => {
+      if (!active || !result.verified) return;
+      active = false;
+      setVerified(true);
+    });
+
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+    };
+  }, [authSignedOut, hydrated, queryVerificationStatus, verified]);
+
+  useEffect(() => {
+    if (!verified || authSignedOut) return;
+
+    const timeout = window.setTimeout(() => {
+      void finishVerified();
+    }, 0);
+
+    return () => window.clearTimeout(timeout);
+  }, [authSignedOut, finishVerified, verified]);
+
+  async function manualVerificationCheck() {
+    if (manualChecking) return;
+
+    setManualChecking(true);
+    setManualStatus(null);
+
+    const result = await queryVerificationStatus();
+
+    if (result.verified) {
+      setVerified(true);
+    } else if (result.unsupported) {
+      setManualStatus(
+        "We couldn't check this one automatically. Log in to continue once it's verified.",
+      );
+    } else {
+      setManualStatus(
+        "Not verified yet. This page will keep checking automatically.",
+      );
+    }
+
+    setManualChecking(false);
   }
 
   async function resend() {
@@ -118,6 +382,7 @@ export function EmailVerificationPending({
       supabase,
       email,
       nextPath,
+      resendType,
       captchaToken,
     );
 
@@ -191,9 +456,40 @@ export function EmailVerificationPending({
         </div>
 
         <p className="text-center font-hand text-lg leading-tight text-ink-soft/70">
-          The link expires after a while, so open it when you can. You can ask
-          for a fresh one below.
+          Opening Gmail on another device? That&apos;s okay — this page checks
+          automatically and will continue as soon as your email is verified.
         </p>
+
+        {verified ? (
+          <div
+            role="status"
+            className="rounded-2xl border-2 border-mint bg-mint-soft px-4 py-3 text-center text-[#3d8a6d]"
+          >
+            <div className="flex items-center justify-center gap-1.5">
+              <Check className="h-4 w-4 shrink-0" />
+              <p className="font-display text-sm font-semibold">
+                {finishing
+                  ? "Email verified! Opening your account..."
+                  : finishError
+                    ? "Email verified!"
+                    : "Email verified!"}
+              </p>
+            </div>
+            <p className="mt-1 font-body text-xs leading-relaxed">
+              {finishError ??
+                finishMessage ??
+                "Finishing your Lovely account now..."}
+            </p>
+            {finishError ? (
+              <Link
+                href={withAuthNext("/login", nextPath)}
+                className="mt-2 inline-flex items-center justify-center gap-1.5 rounded-full bg-strawberry px-4 py-2 font-display text-xs font-semibold text-white shadow-button transition-colors hover:bg-[#f56a80]"
+              >
+                Log in to continue
+              </Link>
+            ) : null}
+          </div>
+        ) : null}
 
         {resendSuccess ? (
           <div
@@ -290,6 +586,24 @@ export function EmailVerificationPending({
             </>
           )}
         </button>
+
+        {!verified ? (
+          <>
+            <button
+              type="button"
+              onClick={() => void manualVerificationCheck()}
+              disabled={manualChecking}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-full border-2 border-pink-soft bg-white px-6 py-2.5 font-display text-sm font-semibold text-strawberry transition-colors hover:border-pink hover:bg-blush disabled:cursor-wait disabled:opacity-60"
+            >
+              {manualChecking ? "Checking..." : "I've verified my email"}
+            </button>
+            {manualStatus ? (
+              <p className="text-center font-body text-xs leading-relaxed text-ink-soft/70">
+                {manualStatus}
+              </p>
+            ) : null}
+          </>
+        ) : null}
 
         <div className="flex items-center justify-center gap-1.5 font-hand text-base text-ink-soft/60">
           <Heart className="h-3.5 w-3.5 text-strawberry" />

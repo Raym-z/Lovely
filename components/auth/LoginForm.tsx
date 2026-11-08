@@ -208,7 +208,7 @@ export function LoginForm({
 
       if (signInError) {
         if (signInError.message.toLowerCase().includes("email not confirmed")) {
-          rememberPendingVerification(cleanedEmail, nextPath);
+          rememberPendingVerification(cleanedEmail, nextPath, "signup");
           router.replace(withAuthNext("/verify-email", nextPath));
           return;
         }
@@ -228,9 +228,14 @@ export function LoginForm({
       }
 
       if (isRegisteredUnverified(newUser)) {
+        const resendType =
+          newUser.email_change_sent_at && !newUser.confirmation_sent_at
+            ? "email_change"
+            : "signup";
         rememberPendingVerification(
           newUser.email ?? cleanedEmail,
           nextPath,
+          resendType,
         );
         router.replace(withAuthNext("/verify-email", nextPath));
         return;

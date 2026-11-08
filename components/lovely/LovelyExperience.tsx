@@ -246,6 +246,12 @@ export default function LovelyExperience({
                 <Sparkles className="h-3.5 w-3.5" />
                 Make your own Lovely
               </Link>
+              <Link
+                href="/signup"
+                className="mt-2 rounded-full px-4 py-1.5 font-body text-[0.58rem] font-bold uppercase tracking-[0.14em] text-ink-soft transition-colors hover:text-strawberry"
+              >
+                Create a free account
+              </Link>
             </div>
           ) : null}
         </footer>

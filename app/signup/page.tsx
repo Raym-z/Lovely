@@ -8,7 +8,7 @@ import { getSupabasePublicConfig } from "@/lib/supabase-public-config";
 export const metadata: Metadata = {
   title: "Create a Lovely account",
   description:
-    "Turn your guest Lovely into an account so your pages and photos stay together.",
+    "Create an account first, or keep a guest Lovely and its pages together under your account.",
 };
 
 export default function SignupPage() {
@@ -24,6 +24,7 @@ export default function SignupPage() {
         <SignupForm
           supabaseUrl={supabase.url}
           supabaseKey={supabase.key}
+          turnstileSiteKey={supabase.turnstileSiteKey}
         />
       </Suspense>
     </GuestSessionProvider>
