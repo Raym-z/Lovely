@@ -104,20 +104,20 @@ Accounts are only eligible for deletion when they have been inactive for at leas
 
 Clone the repository:
 
-\`\`\`bash
+\`\`\`
 git clone https://github.com/Raym-z/Lovely.git
 cd Lovely
 \`\`\`
 
 Install dependencies:
 
-\`\`\`bash
+\`\`\`
 npm install
 \`\`\`
 
 Start the development server:
 
-\`\`\`bash
+\`\`\`
 npm run dev
 \`\`\`
 
