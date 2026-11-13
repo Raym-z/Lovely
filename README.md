@@ -127,6 +127,44 @@ Use `?limit=25` to examine a smaller batch. The endpoint refuses unauthorised re
 
 Cleanup is idempotent: it lists and checks first, deletes only eligible users, re-verifies ownership immediately before deleting, and records every run in `public.lovely_cleanup_runs` with counts and per-user outcomes. Individual deletion failures are recorded without stopping the rest of the batch.
 
+## Supabase keep-alive health check
+
+`GET /health` runs real Supabase queries and returns aggregate counts. It exists so an external scheduler can keep a free Supabase project active; projects on the free plan are paused after seven days without database activity.
+
+```bash
+curl -s \
+  -H "Authorization: Bearer $CRON_SECRET" \
+  https://your-deployment.example/health
+```
+
+```json
+{
+  "status": "ok",
+  "checkedAt": "2026-11-13T09:00:00.000Z",
+  "latencyMs": 84,
+  "database": {
+    "connected": true,
+    "usersTruncated": false,
+    "counts": {
+      "totalUsers": 18,
+      "registeredUsers": 12,
+      "guestUsers": 6,
+      "customPages": 42,
+      "uploadedImages": 7,
+      "activityRecords": 31
+    }
+  }
+}
+```
+
+Schedule it with cron-job.org (or any uptime service) every six hours:
+
+1. Create a job for `https://your-deployment.example/health`.
+2. Set the interval to every 6 hours.
+3. Add a custom request header: `Authorization: Bearer <CRON_SECRET>`.
+
+The endpoint requires the same `CRON_SECRET` as the cleanup job. It returns `401` without a matching header and `503` when `CRON_SECRET` or Supabase is not configured, so a failing job is visible in cron-job.org. It only exposes aggregate counts, never user data. Optional tables from unapplied migrations return `null` instead of failing the check.
+
 ## Photo uploads
 
 Each story can use an illustrated template or an uploaded photo. Photos are cropped in the browser to the polaroid's exact `4:3` image viewport, exported as WebP (JPEG fallback), compressed toward the 1 MB target, and only then uploaded. Original files are never stored. Uploaded assets can be reused across stories and owned pages without duplicate Storage objects.

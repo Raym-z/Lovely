@@ -1,26 +1,12 @@
-import crypto from "node:crypto";
 import { NextResponse } from "next/server";
 import {
   CleanupConfigurationError,
   runAnonymousUserCleanup,
 } from "@/lib/anonymous-cleanup";
 import { CLEANUP_MAX_CANDIDATES } from "@/lib/anonymous-cleanup-rules";
+import { isAuthorizedCronRequest } from "@/lib/cron-auth";
 
 export const maxDuration = 60;
-
-function isAuthorized(request: Request) {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) return false;
-
-  const provided = request.headers.get("authorization") ?? "";
-  const expected = `Bearer ${secret}`;
-  const providedBuffer = Buffer.from(provided);
-  const expectedBuffer = Buffer.from(expected);
-
-  if (providedBuffer.length !== expectedBuffer.length) return false;
-
-  return crypto.timingSafeEqual(providedBuffer, expectedBuffer);
-}
 
 function getDefaultMaxCandidates() {
   const raw = Number(process.env.ANONYMOUS_CLEANUP_MAX_CANDIDATES ?? "");
@@ -45,7 +31,7 @@ export async function GET(request: Request) {
     );
   }
 
-  if (!isAuthorized(request)) {
+  if (!isAuthorizedCronRequest(request)) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 
