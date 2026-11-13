@@ -1,191 +1,178 @@
-# Lovely
+# Lovely 💗
 
-A little website, a lot of love.
+### A little website, a lot of love.
 
-Lovely is an interactive Valentine's experience: a floating envelope, a scrapbook timeline, a playful quiz, little gifts, and one very important question. It also includes a creator that turns your own version into a short shareable link.
+Lovely is an interactive Valentine's Day experience that lets you create personalized digital love pages for someone special. Turn memories, photos, little surprises, and heartfelt messages into a playful experience that can be shared through a single link.
 
-## Routes
+**[Visit Lovely](https://lovely.raymondwillytan.com)**
 
-| Route | What it does |
-| --- | --- |
-| `/` | The demo experience |
-| `/create` | The creator / editor |
-| `/[uid]` | A saved, shareable Lovely |
-| `/create?edit=UID` | Edit a saved Lovely (with its edit key or as its owner) |
-| `/signup` | Upgrade the current guest into a permanent account |
-| `/login` | Log in to an existing Lovely account |
-| `/account` | List, open, and edit pages owned by the signed-in user |
+<!-- Add a project preview image or GIF here -->
 
-## Getting started
+---
 
-```bash
+## ✨ Features
+
+### Interactive Valentine's Experience
+
+- **Floating Envelope** — An animated envelope that introduces the experience.
+- **Scrapbook Timeline** — A collection of personal stories and memories presented in a scrapbook-inspired layout.
+- **Photo Memories** — Add personal photos to your stories with interactive cropping and zoom controls.
+- **Interactive Quiz** — A playful quiz that makes each experience more personal.
+- **Little Gifts** — Surprise your recipient with thoughtful digital gifts.
+- **The Big Question** — End the experience with a special question.
+
+### Lovely Creator
+
+- **Personalized Pages** — Create your own Valentine's experience without writing any code.
+- **Live Editing** — Customize stories, photos, templates, and content.
+- **Shareable Links** — Publish your creation with a unique URL.
+- **Edit Access** — Revisit and update your pages using an edit key or account.
+
+### Accounts & Image Management
+
+- **Guest Sessions** — Start creating without registering.
+- **Account Registration** — Upgrade a guest session into a permanent account without losing existing content.
+- **Cross-Device Verification** — Complete email verification on another device while keeping the original session in sync.
+- **Personal Dashboard** — Manage pages associated with your account.
+- **Photo Library** — Reuse uploaded photos across stories and pages.
+
+---
+
+## 🛠️ Tech Stack
+
+| Technology           | Purpose                                          |
+| -------------------- | ------------------------------------------------ |
+| Next.js              | Full-stack React framework                       |
+| React                | Component-based UI                               |
+| TypeScript           | Type-safe development                            |
+| Tailwind CSS         | Styling and responsive layouts                   |
+| Framer Motion        | Animations and interactions                      |
+| Supabase             | PostgreSQL database, authentication, and storage |
+| Cloudflare Turnstile | CAPTCHA and abuse prevention                     |
+| Resend               | Transactional email delivery                     |
+| Vercel               | Deployment and scheduled tasks                   |
+
+---
+
+## 🏗️ Technical Highlights
+
+Lovely was built with a focus on more than just the user interface. Several parts of the application involve custom backend logic and data ownership management.
+
+### Guest-to-Account Ownership
+
+Users can begin creating pages without registering. When they decide to create an account, their existing anonymous Supabase user is upgraded with an email and password.
+
+This preserves the original user ID and maintains ownership of existing pages, uploaded images, and edit permissions.
+
+Users can also log into an existing account, with a secure ownership transfer process that moves guest content without changing page IDs or edit keys.
+
+### Secure Image Upload Pipeline
+
+Uploaded photos are processed in the browser before reaching storage:
+
+1. Interactive cropping with drag, zoom, and pinch controls.
+2. Cropping to the scrapbook's 4:3 image viewport.
+3. Export to WebP, with JPEG fallback.
+4. Compression toward a 1 MB target.
+5. Upload only the processed image, rather than the original file.
+
+The application also supports a reusable photo library, reference tracking, and server-authorized image management.
+
+### Authentication & Email Verification
+
+- Supabase anonymous authentication for guest sessions.
+- Email and password registration for permanent accounts.
+- Email confirmation through Resend SMTP.
+- Cloudflare Turnstile protection for authentication requests.
+- Server-verified cross-device email confirmation.
+- Secure guest ownership transfer when logging into an existing account.
+
+### Automated Guest Account Cleanup
+
+A protected Vercel Cron job periodically reviews inactive anonymous accounts.
+
+Accounts are only eligible for deletion when they have been inactive for at least 30 days, own no pages or images, and have no incomplete ownership transfers. Unverifiable accounts are preserved.
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- Node.js
+- npm
+- A Supabase project for persistent storage and authentication
+
+### Installation
+
+Clone the repository:
+
+```
+git clone https://github.com/Raym-z/Lovely.git
+cd Lovely
+```
+
+Install dependencies:
+
+```
 npm install
+```
+
+Start the development server:
+
+```
 npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
 
-## Storage
+### Environment Variables
 
-The creator works without any setup by falling back to local JSON files in `.data/lovely/`. That is useful for development, but it is **not reliable on serverless hosts** such as Vercel.
+Create a `.env.local` file based on `.env.example`.
 
-For real share links, create a free Supabase project and:
+Configure the required Supabase credentials and application settings. For persistent storage and authentication, the project requires:
 
-1. Run [`supabase/schema.sql`](supabase/schema.sql) in the Supabase SQL editor.
-2. Copy `.env.example` to `.env.local` and fill in:
-   - `SUPABASE_URL`
-   - `SUPABASE_SECRET_KEY` (preferred) or the legacy `SUPABASE_SERVICE_ROLE_KEY`
-   - `NEXT_PUBLIC_SUPABASE_URL` (optional when `SUPABASE_URL` is set)
-   - `NEXT_PUBLIC_SUPABASE_ANON_KEY` (or `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`)
-   - `NEXT_PUBLIC_SHARE_ORIGIN` (optional; leave empty locally)
-3. Enable **Anonymous Sign-Ins** and **Manual Linking** in Supabase under Authentication → Providers.
-4. In Supabase Auth CAPTCHA settings, enable Cloudflare Turnstile and add the Turnstile **secret key** there. Put only the **site key** in `NEXT_PUBLIC_TURNSTILE_SITE_KEY`.
-5. Add your local/production `/signup?complete=1` URL to the Auth redirect allow list.
+- Supabase project URL
+- Supabase server secret key
+- Supabase public/anon key
+- Cloudflare Turnstile site key and corresponding Supabase CAPTCHA configuration
 
-The secret/service-role key is only used in server code. Do **not** use the publishable or anon key here — RLS is enabled and the app will show a setup error. Pages are stored as `UID -> compressed config`; the table has no public policies.
+For production deployments, configure the additional email, site URL, share origin, and cron environment variables described in `.env.example`.
 
-For localhost, leave `NEXT_PUBLIC_SHARE_ORIGIN` empty so the creator uses whatever origin the browser is currently on (including non-default ports).
+### Database Setup
 
-## Sharing / subdomain
+Run `supabase/schema.sql` in the Supabase SQL Editor to initialize the database schema, tables, policies, and storage configuration.
 
-Point `lovely.raymondwillytan.com` at the deployment and set:
+For an existing deployment, apply the relevant migrations in `supabase/migrations/` in chronological order.
 
-```bash
-NEXT_PUBLIC_SHARE_ORIGIN=https://lovely.raymondwillytan.com
-```
+Additional Supabase configuration is required for anonymous authentication, email confirmation, Cloudflare Turnstile, and Resend SMTP.
 
-Share links will then look like `https://lovely.raymondwillytan.com/abc123xy`.
+---
 
-## Editing
+## 📜 Available Scripts
 
-The edit key is saved in the creator's browser for convenience and is also shown once on the success screen as a recovery key. Anyone with the share link can view the page; only someone with the edit key can update it.
+| Command                | Description                         |
+| ---------------------- | ----------------------------------- |
+| `npm run dev`          | Start the development server        |
+| `npm run build`        | Build the production application    |
+| `npm run start`        | Start the production server         |
+| `npm run lint`         | Run ESLint                          |
+| `npm run test:cleanup` | Run anonymous account cleanup tests |
 
-## Guest sessions and accounts
+---
 
-The `/create` flow automatically establishes a Supabase anonymous session the first time it loads. The session is persisted by the Supabase browser client, so refreshing or revisiting the creator restores the same guest UID instead of creating another user.
+## 🌐 Deployment
 
-New guest sessions are protected by Cloudflare Turnstile. Existing sessions are restored before the Turnstile widget is initialized, so returning guests are not challenged again. Turnstile tokens are single-use; failed or expired attempts reset the widget and expose a retry. If the public Supabase variables or `NEXT_PUBLIC_TURNSTILE_SITE_KEY` are missing, the creator still works and the session state reports `unavailable` or `error`.
+Lovely is deployed on Vercel and uses Supabase for persistent data, authentication, and image storage.
 
-Use `useGuestSession()` to access the current `user`, `userId`, `session`, and loading/error state.
+Production share links use the configured `NEXT_PUBLIC_SHARE_ORIGIN` environment variable.
 
-From the success screen, guests can optionally create a permanent account. Registration links an email and password to the existing anonymous user with `updateUser()`, preserving the Supabase UID and all pages owned by it. Existing edit keys continue to work and are never replaced.
+---
 
-For existing deployments, run `supabase/migrations/20261106000000_account_ownership.sql` (or the latest `supabase/schema.sql`) to add `lovely_pages.owner_id` and the owner-only RLS policies. Pages created before the migration keep `owner_id = null` and remain editable with their edit key; editing one while signed in claims it for that account.
+## 💗 About
 
-`/signup` supports two registration paths. A visitor with an anonymous session upgrades that account with `updateUser({ email, password })`, preserving the UID, pages, images, edit keys, and ownership. A visitor without a guest session uses `signUp({ email, password })`; no anonymous user is created first. Both paths require email confirmation and send the user to `/verify-email`. A standalone signup may return no session until confirmation, which is handled explicitly.
+Lovely started as a small creative project: a way to turn a simple Valentine's Day message into something more personal and interactive.
 
-The pending-verification screen supports cross-device confirmation. Each registration stores a random watch token in Supabase user metadata. The desktop polls `/api/auth/verification-status` every five seconds with the user ID and watch token; the server verifies the token against Supabase Auth before reporting `email_confirmed_at`. The manual “I’ve verified my email” action uses the same check. Guest conversions refresh the existing session, while standalone registrations finish by signing in with the credentials retained in memory for that browser session. If those in-memory credentials are gone after a refresh, the screen falls back to login.
+What began as a playful web experience grew into a full-stack application involving authentication, content ownership, image processing, secure storage, and automated maintenance.
 
-Email confirmation is required for permanent accounts. Enable **Confirm email** in Supabase Auth settings, and keep Resend configured as the project's SMTP provider. Resending uses `email_change` for guest conversions and `signup` for standalone accounts, with a fresh Cloudflare Turnstile token and a 60-second client cooldown. Confirmation links return through `/auth/confirm`, which exchanges the Supabase code, token hash, or session tokens, verifies the resulting user with Supabase Auth, and then continues to the account. The `/signup?complete=1` screen remains available for legacy accounts that still need to finish setting a password.
-
-Unverified permanent accounts are redirected to `/verify-email` from `/account` and `/create`. Guest sessions are never required to verify an email, and public Lovely pages and edit-key access remain unchanged.
-
-Configure the Supabase **Site URL** as the production Lovely origin and add these redirect URLs:
-
-```text
-http://localhost:3000/auth/confirm
-https://your-production-domain/auth/confirm
-```
-
-Set `NEXT_PUBLIC_SITE_URL` in production when the confirmation origin differs from the browser origin. Use the existing `supabase/email-templates/confirm-signup.html` template for both **Confirm signup** and **Change Email Address** so the guest-to-permanent upgrade keeps Lovely's branding. The template must keep using `{{ .ConfirmationURL }}`; Resend SMTP is configured in Supabase Auth, not in the app.
-
-If a guest instead logs into a different existing account, `/login` captures the guest access token in memory before switching sessions. After login, the server verifies both Supabase identities and calls the transactional `transfer_guest_ownership` database function to move the guest's pages and images to the destination account. Page IDs, edit keys, image references, and public Storage paths are preserved. The transfer is idempotent and records completed source guest UIDs so a guest cannot be moved to two accounts. If the transfer fails, the account session remains active and the user can retry while the guest proof is still in memory, or use the original edit key.
-
-Run `supabase/migrations/20261106020000_guest_ownership_transfer.sql` after the account and image migrations to enable this transfer flow.
-
-## Anonymous guest cleanup
-
-Unused anonymous guests are reviewed once per day (03:17 UTC) by a protected Vercel Cron route. A guest is deleted only when **all** of these are true:
-
-- It is an anonymous Supabase Auth user.
-- Its last verified activity was at least 30 days ago.
-- It owns no rows in `public.lovely_pages`.
-- It owns no rows in `public.lovely_images` (as `owner_id` or `uploaded_by_user_id`).
-- It has no incomplete row in `public.lovely_account_transfers`.
-
-Registered accounts, guests who own pages or images, recently active guests, and guests whose activity or ownership cannot be verified are always kept.
-
-Meaningful activity is recorded server-side in `public.lovely_user_activity` when a guest creates or edits a page, uploads a photo, or deletes a photo. Page views and background requests are intentionally excluded. Accounts without an activity row fall back to Supabase Auth's `last_sign_in_at`; if that is also unknown, the account is skipped rather than assumed abandoned.
-
-### Setup
-
-1. Run [`supabase/migrations/20261108000000_anonymous_user_cleanup.sql`](supabase/migrations/20261108000000_anonymous_user_cleanup.sql) in the Supabase SQL editor. New deployments can run the updated [`supabase/schema.sql`](supabase/schema.sql) instead.
-2. Add `CRON_SECRET` to the production environment. Vercel Cron sends it automatically as `Authorization: Bearer <CRON_SECRET>`.
-3. Deploy. The schedule lives in [`vercel.json`](vercel.json).
-4. Run the first cleanup as a dry run and review the response and the `public.lovely_cleanup_runs` table.
-5. Only after the dry run looks right, set `ANONYMOUS_CLEANUP_DELETE_ENABLED=true` and redeploy to enable real deletion.
-
-### Manual dry run
-
-```bash
-curl -s \
-  -H "Authorization: Bearer $CRON_SECRET" \
-  "https://your-deployment.example/api/cron/cleanup-anonymous-users?dryRun=1"
-```
-
-Use `?limit=25` to examine a smaller batch. The endpoint refuses unauthorised requests, never accepts user IDs from the client, and only uses the server-side Supabase secret key. Until `ANONYMOUS_CLEANUP_DELETE_ENABLED` is `true`, every scheduled run is a dry run.
-
-Cleanup is idempotent: it lists and checks first, deletes only eligible users, re-verifies ownership immediately before deleting, and records every run in `public.lovely_cleanup_runs` with counts and per-user outcomes. Individual deletion failures are recorded without stopping the rest of the batch.
-
-## Supabase keep-alive health check
-
-`GET /health` runs real Supabase queries and returns aggregate counts. It exists so an external scheduler can keep a free Supabase project active; projects on the free plan are paused after seven days without database activity.
-
-```bash
-curl -s \
-  -H "Authorization: Bearer $CRON_SECRET" \
-  https://your-deployment.example/health
-```
-
-```json
-{
-  "status": "ok",
-  "checkedAt": "2026-11-13T09:00:00.000Z",
-  "latencyMs": 84,
-  "database": {
-    "connected": true,
-    "usersTruncated": false,
-    "counts": {
-      "totalUsers": 18,
-      "registeredUsers": 12,
-      "guestUsers": 6,
-      "customPages": 42,
-      "uploadedImages": 7,
-      "activityRecords": 31
-    }
-  }
-}
-```
-
-Schedule it with cron-job.org (or any uptime service) every six hours:
-
-1. Create a job for `https://your-deployment.example/health`.
-2. Set the interval to every 6 hours.
-3. Add a custom request header: `Authorization: Bearer <CRON_SECRET>`.
-
-The endpoint requires the same `CRON_SECRET` as the cleanup job. It returns `401` without a matching header and `503` when `CRON_SECRET` or Supabase is not configured, so a failing job is visible in cron-job.org. It only exposes aggregate counts, never user data. Optional tables from unapplied migrations return `null` instead of failing the check.
-
-## Photo uploads
-
-Each story can use an illustrated template or an uploaded photo. Photos are cropped in the browser to the polaroid's exact `4:3` image viewport, exported as WebP (JPEG fallback), compressed toward the 1 MB target, and only then uploaded. Original files are never stored. Uploaded assets can be reused across stories and owned pages without duplicate Storage objects.
-
-Owner sessions can reuse their personal photo library. Edit-key holders can upload and manage photos for that specific page, but cannot browse the owner's wider library. Photo writes are mediated by server routes using the service role only after validating the bearer token or the page edit key.
-
-Existing deployments must run the image migration in the Supabase SQL editor:
-
-1. Open `supabase/migrations/20261106010000_image_uploads.sql`.
-2. In the Supabase Dashboard, open **SQL Editor**, paste the migration, and run it.
-3. Verify `public.lovely_images` and `public.lovely_image_references` exist in **Table Editor**.
-4. Verify the public **Storage** bucket `lovely-images` exists.
-5. Verify RLS is enabled on both new tables and the bucket has only public read access, not public writes.
-
-The migration creates the tables, indexes, owner RLS policies, the public `lovely-images` bucket, and public-read Storage policy. No storage write policy is intentionally created; writes run server-side after owner/edit-key authorization. Unreferenced library images can be deleted explicitly; images still referenced by a page are protected from deletion.
-
-## Scripts
-
-```bash
-npm run dev     # development
-npm run build   # production build
-npm run start   # start the production build
-npm run lint    # eslint
-```
+**A little website, a lot of love.**
